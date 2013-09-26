@@ -9,7 +9,8 @@ apt-get update
 apt-get install -y \
 	git subversion \
 	zip unzip vim ia32-libs \
-	g++ make automake autoconf cmake ccache patch gettext libtool \
+	g++ make automake cmake ccache patch gettext libtool \
+	autoconf2.64 \
 	build-essential gcc-multilib \
 	libsdl1.2-dev
 
