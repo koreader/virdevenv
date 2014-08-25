@@ -40,10 +40,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # the path on the host to the actual folder. The second argument is
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
-  config.vm.synced_folder "vmconfigs", "/vmconfigs", owner: "vagrant", group: "vagrant"
   config.vm.synced_folder "../koreader", "/home/vagrant/koreader"
   config.vm.synced_folder "../koreader-base", "/home/vagrant/koreader-base"
-  config.vm.synced_folder "../kindlepdfviewer", "/home/vagrant/kindlepdfviewer"
+  #config.vm.synced_folder "../kindlepdfviewer", "/home/vagrant/kindlepdfviewer"
 
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
