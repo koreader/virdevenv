@@ -22,7 +22,7 @@ echo " ------------------------------------------"
 apt-get install -y \
 	$MISC_TOOLS \
 	build-essential dpkg-dev \
-	g++ make automake cmake ccache patch libtool nasm autoconf2.64 \
+	g++ make automake cmake ccache patch libtool nasm autoconf2.64 luarocks \
 	$GLIB_DEPS \
 	$KINDLE_TC $KOBO_TC \
 	$LUAJIT_DEPS \
