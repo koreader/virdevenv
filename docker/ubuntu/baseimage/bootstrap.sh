@@ -25,4 +25,4 @@ apt-get install -y \
 	$GLIB_DEPS \
 	$KINDLE_TC $KOBO_TC \
 	$LUAJIT_DEPS \
-	libffi-dev libsdl1.2-dev
+	libsdl2-dev

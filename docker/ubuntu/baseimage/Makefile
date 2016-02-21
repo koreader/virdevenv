@@ -1,4 +1,4 @@
 all: build
 
 build: Dockerfile bootstrap.sh
-	docker build --rm=true -t houqp/kobase:0.0.1 .
+	docker build --rm=true -t houqp/kobase:0.0.2 .
