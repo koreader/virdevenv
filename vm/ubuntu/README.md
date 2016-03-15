@@ -15,16 +15,16 @@ Usage
 -----
 
 * Install dependencies, see above
-* Create a directory for kroeader dev, say "~/kodev": `mkdir ~/kodev`
+* Create a directory for koreader dev, say "~/kodev": `mkdir ~/kodev`
 * cd into dev directory: `cd ~/kodev`
 * clone virtual dev env repo: `git clone https://github.com/koreader/virdevenv.git`
 * clone koreader repo: `git clone URL_TO_YOUR_KOREADER_FORK koreader`
 * clone koreader-base repo: `git clone URL_TO_YOUR_KOREADER_BASE_FORK koreader-base`
 * cd into virtual env repo: `cd virdevenv`
 * run `vagrant up` to bootstrap the vm (going to take a while)
-* run `vagrant ssh` and compile kroeader inside the vm!
+* run `vagrant ssh` and compile koreader inside the vm!
 
-Following is how kroeader dev dir's layout will look like:
+Following is how koreader dev dir's layout will look like:
 ```
 ├── kodev
 │   ├── koreader
