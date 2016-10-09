@@ -13,5 +13,7 @@ echo 'export ANDROID_HOME=/home/ko/android-sdk-linux' >> ~/.bashrc
 echo 'export PATH=$NDK:$ANDROID_HOME/tools/bin:$ANDROID_HOME/tools:$PATH' >> ~/.bashrc
 
 source ~/.bashrc
-echo -e "y" | android update sdk --no-ui --filter android-21
-echo -e "y" | android update sdk --no-ui --filter android-19
+# NOTE: get list of packages with `android list sdk -e`
+# echo -e "y" | android update sdk --no-ui --filter android-21
+echo -e "y" | android update sdk --no-ui -a --filter \
+	platform-tools,build-tools-24.0.3,android-19
