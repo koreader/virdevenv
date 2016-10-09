@@ -6,4 +6,4 @@ build: Dockerfile
 	docker build --rm=true -t $(USER)/koandroid:$(VERSION) .
 
 shell:
-	docker run --rm -t -i $(USER)/koandroid:$(VERSION) bash -l
+	docker --detach-keys "ctrl-q,ctrl-q" run --rm -t -i $(USER)/koandroid:$(VERSION) bash -l
