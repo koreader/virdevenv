@@ -2,6 +2,8 @@
 
 HOME=/home/ko
 
+. /etc/bash_completion
+
 export PATH=$HOME/local/bin:$PATH
 if [ -f ${HOME}/local/bin/luarocks ]; then
     # add local rocks to $PATH
