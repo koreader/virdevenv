@@ -1,4 +1,4 @@
-FROM houqp/kobase:0.0.3
+FROM houqp/kobase:0.0.4
 
 USER root
 RUN add-apt-repository -y ppa:openjdk-r/ppa
