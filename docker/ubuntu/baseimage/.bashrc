@@ -12,3 +12,13 @@ fi
 
 XTOOLS=${HOME}/x-tools
 export PATH=${XTOOLS}/arm-kobo-linux-gnueabihf/bin:${XTOOLS}/arm-kindlepw2-linux-gnueabi/bin:${XTOOLS}/arm-kindle5-linux-gnueabi/bin:${XTOOLS}/arm-kindle-linux-gnueabi/bin:$PATH
+
+alias ls='ls --color=auto'
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+
+mkcd () {
+    mkdir -p "$*"
+    cd "$*"
+}
