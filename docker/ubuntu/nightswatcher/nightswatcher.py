@@ -37,6 +37,7 @@ BUILD_DIR = '/data/release_download/'
 ARTIFACT_URL = ('https://gitlab.com/koreader/nightly-builds'
                 '/builds/%s/artifacts/download')
 NIGHTLY_BUILD_DIR = BUILD_DIR + 'nightly'
+STABLE_BUILD_DIR = BUILD_DIR + 'stable'
 # Matching:
 # koreader-ubuntu-touch-arm-linux-gnueabihf-v2015.11-640-g17e9a8e.targz
 # koreader-android-arm-linux-androideabi-v2015.11-654-gb7392f7.apk
@@ -179,6 +180,8 @@ def fetch_build(build):
 def fetch_build_worker():
     if not os.path.exists(NIGHTLY_BUILD_DIR):
         os.mkdir(NIGHTLY_BUILD_DIR)
+    if not os.path.exists(STABLE_BUILD_DIR):
+        os.mkdir(STABLE_BUILD_DIR)
     while True:
         logger.info('Fetch build worker waiting for new builds....')
         gevent.spawn(fetch_build, build_fetch_queue.get()).join(timeout=60)
