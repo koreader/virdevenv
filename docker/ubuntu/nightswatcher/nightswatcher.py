@@ -147,15 +147,18 @@ def extract_build(artifact_zip, build):
     run_cmd(unzip_cmd)
 
     tmp_artifact_path = tmp_version_dir + download_artifact
+    tmp_targz_path = tmp_version_dir + artifact['targz']
     if build['name'] == 'build_android':
         sign_apk(tmp_artifact_path)
     shutil.move(tmp_artifact_path, download_artifact_path)
+    # also make a copy of targz for rebuilding zsync index if needed
+    shutil.copy2(tmp_targz_path, version_dir)
 
     # build zsync metadata for kindle, kobo and pocketbook OTA
     if build['name'] in ['build_kindle', 'build_legacy_kindle',
                          'build_kobo', 'build_pocketbook']:
         zsync_file = OTA_DIR + ('koreader-%s-latest-nightly.zsync' % platform)
-        shutil.move(tmp_version_dir + artifact['targz'], OTA_DIR)
+        shutil.move(tmp_targz_path, OTA_DIR)
         run_cmd(['zsyncmake', OTA_DIR + artifact['targz'],
                  '-u', artifact['targz'], '-o', zsync_file])
 
