@@ -73,8 +73,11 @@ def run_cmd(cmd):
 
 
 def sign_apk(apk_path):
-    # TODO: move to apk signature scheme v2 for faster install in
+    # TODO: move to apk signature scheme v2 for faster install on
     # android N
+    logger.info('Remiving existing debug signature from %s...', apk_path)
+    run_cmd(['zip', '-d', apk_path, 'META-INF/*'])
+
     logger.info('Signing %s...', apk_path)
     re = gevent.subprocess.check_output(
         ['jarsigner', '-verbose', '-sigalg', 'SHA1withRSA',
@@ -161,6 +164,8 @@ def extract_build(artifact_zip, build):
         shutil.move(tmp_targz_path, OTA_DIR)
         run_cmd(['zsyncmake', OTA_DIR + artifact['targz'],
                  '-u', artifact['targz'], '-o', zsync_file])
+        # TODO: find the new targz file by reading the second line of zsync
+        # file, then purge the old targzs
 
     shutil.rmtree(tmp_version_dir)
 
