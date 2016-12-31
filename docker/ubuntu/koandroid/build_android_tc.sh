@@ -12,7 +12,10 @@ echo 'export NDK=/home/ko/android-ndk-r12b' >> ./.bashrc
 echo 'export ANDROID_HOME=/home/ko/android-sdk-linux' >> ~/.bashrc
 echo 'export PATH=$NDK:$ANDROID_HOME/tools/bin:$ANDROID_HOME/tools:$PATH' >> ~/.bashrc
 
+ANDROID_SDK_VER=24.0.3
+echo "export PATH=\$ANDROID_HOME/build-tools/${ANDROID_SDK_VER}:\$PATH" >> ~/.bashrc
+
 source ~/.bashrc
 # NOTE: get list of packages with `android list sdk -e`
 echo -e "y" | android update sdk --no-ui -a --filter \
-	platform-tools,build-tools-24.0.3,android-19
+	platform-tools,build-tools-${ANDROID_SDK_VER},android-19
