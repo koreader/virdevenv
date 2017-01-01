@@ -114,6 +114,9 @@ download_artifact_ext_map = {
     'build_ubuntutouch': 'click',
 }
 
+ota_models = frozenset(['build_kindle', 'build_legacy_kindle',
+                        'build_kobo', 'build_pocketbook'])
+
 
 def extract_build(artifact_zip, build):
     # caller is responsible for removing artifact_zip
@@ -158,8 +161,8 @@ def extract_build(artifact_zip, build):
     shutil.copy2(tmp_targz_path, version_dir)
 
     # build zsync metadata for kindle, kobo and pocketbook OTA
-    if build['name'] in ['build_kindle', 'build_legacy_kindle',
-                         'build_kobo', 'build_pocketbook']:
+    if build['name'] in ota_models:
+        # FIXME: check verion in latest-nightly and skip old versions
         zsync_file = OTA_DIR + ('koreader-%s-latest-nightly.zsync' % platform)
         shutil.move(tmp_targz_path, OTA_DIR)
         run_cmd(['zsyncmake', OTA_DIR + artifact['targz'],
