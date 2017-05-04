@@ -22,7 +22,19 @@ Usage
 * clone koreader-base repo: `git clone URL_TO_YOUR_KOREADER_BASE_FORK koreader-base`
 * cd into virtual env repo: `cd ./virdevenv/vm/ubuntu`
 * run `vagrant up` to bootstrap the vm (going to take a while)
-* run `vagrant ssh` and compile koreader inside the vm!
+* run `vagrant ssh` and compile koreader inside the vm! 
+
+macOS Notes
+-----
+1. Install XQuartz
+2. Restart
+3. Run XQuartz
+4. XQuartz -> Applications -> Terminal
+5. Inside the terminal run `ssh vagrant@localhost -p 2222 -Y`  
+
+The last step is necessary for setting up X11 forwarding to XQuartz
+
+Now you can continue to run `./kodev run` and it will open on macOS rather than giving you ncurses hell :)
 
 Following is how koreader dev dir's layout will look like:
 ```
