@@ -3,7 +3,7 @@
 
 from gevent import monkey
 from gevent import queue
-monkey.patch_all()
+monkey.patch_all()  # NOQA
 from streql import equals
 import gevent
 import falcon
@@ -88,13 +88,18 @@ def sign_apk(apk_path):
          apk_path, 'koreader_release'])
     logger.info('Output from jarsigner:\n%s', re)
 
+    aligned_apk_path = apk_path + '_apligned'
+    run_cmd(['zipalign', '-v', '4', apk_path, aligned_apk_path])
+
+    run_cmd(['mv', '-f', aligned_apk_path, apk_path])
+
 
 def get_artifact_metadata(artifact_zip):
     try:
         zf = zipfile.ZipFile(artifact_zip)
     except zipfile.BadZipfile:
-        logger.error('Got invalid zip file: %s', artifact_zip)
-        return
+        logger.exception('Got invalid zip file: %s', artifact_zip)
+        return None, None
 
     platform = None
     artifact = {}
@@ -121,6 +126,10 @@ ota_models = frozenset(['build_kindle', 'build_legacy_kindle',
 def extract_build(artifact_zip, build):
     # caller is responsible for removing artifact_zip
     platform, artifact = get_artifact_metadata(artifact_zip)
+    if not platform or not artifact_zip:
+        logger.error(
+            'Invalid build artifact, failed to extract metadata from zipfile.')
+        return
 
     # validate artifact_zip
     if 'targz' not in artifact:
