@@ -233,6 +233,10 @@ class PipeLine():
         if status == 'success' or status == 'failed':
             # build finished, download as many artifacts as possible
             for build in data['builds']:
+                if not build['name'].startswith('build_'):
+                    logger.debug('Skipping non-build job %s(%s), status: %s...',
+                                 build['name'], build['id'], build['status'])
+                    continue
                 logger.info('Processing build %s(%s), status: %s...',
                             build['name'], build['id'], build['status'])
                 if build['status'] != 'success':
