@@ -35,7 +35,7 @@ APK_SIGN_KEY_STORE_PATH = os.environ['APK_SIGN_KEY_STORE_PATH']
 OTA_DIR = '/data/ota/'
 BUILD_DIR = '/data/release_download/'
 ARTIFACT_URL = ('https://gitlab.com/koreader/nightly-builds'
-                '/builds/%s/artifacts/download')
+                '/-/jobs/%s/artifacts/download')
 NIGHTLY_BUILD_DIR = BUILD_DIR + 'nightly'
 STABLE_BUILD_DIR = BUILD_DIR + 'stable'
 # Matching:
