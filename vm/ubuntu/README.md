@@ -21,8 +21,10 @@ Usage
 * clone koreader repo: `git clone URL_TO_YOUR_KOREADER_FORK koreader`
 * clone koreader-base repo: `git clone URL_TO_YOUR_KOREADER_BASE_FORK koreader-base`
 * cd into virtual env repo: `cd ./virdevenv/vm/ubuntu`
+* tell `vagrant` to use virtualbox instead of libvirt (needed under Fedora): `export VAGRANT_DEFAULT_PROVIDER=virtualbox`
 * run `vagrant up` to bootstrap the vm (going to take a while)
-* run `vagrant ssh` and compile koreader inside the vm! 
+* run `vagrant ssh` and compile koreader inside the vm: `cd koreader`, `./kodev build` (this will take a while)
+* run koreader with `./kodev run`
 
 macOS Notes
 -----
