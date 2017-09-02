@@ -51,3 +51,7 @@ develop on the host machine and only use the vm to compile.
 
 If you want to run emulator from inside vm, make sure X window system is installed on
 host machine.
+
+Windows Notes
+-----
+You might have to run vagrant inside of an admin console for symlinks to work.
