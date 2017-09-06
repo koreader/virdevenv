@@ -50,7 +50,7 @@ version_re = re.compile(
 
 def trigger_build():
     repo = 'koreader%2Fnightly-builds'
-    trigger_url = 'https://gitlab.com/api/v3/projects/%s/trigger/builds' % repo
+    trigger_url = 'https://gitlab.com/api/v4/projects/%s/trigger/pipeline' % repo
     while True:
         now = datetime.now()
         next_build_time = now.replace(hour=6, minute=0, second=0)
