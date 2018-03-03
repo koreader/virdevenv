@@ -187,9 +187,9 @@ def fetch_build(build):
     logger.info('Fetching artifacts for build %s(%s): %s',
                 build['name'], build['id'], build['artifacts_file'])
     artifact_zip = '%s/%s_artifacts.zip' % (TMP_DATA_DIR, build['id'])
-    # -C - for continue download from dropped off
-    # -L - to follow redirects
-    retcode = run_cmd(['curl', '--retry', '3', '-C', '-L', '-',
+    # `-C -` for continue download from dropped off
+    # `-L` to follow redirects
+    retcode = run_cmd(['curl', '--retry', '3', '-C', '-', '-L',
                        ARTIFACT_URL % build['id'], '-o', artifact_zip])
     if retcode != 0:
         logger.error('Failed to download build %s(%s)',
