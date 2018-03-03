@@ -42,7 +42,7 @@ STABLE_BUILD_DIR = BUILD_DIR + 'stable'
 # koreader-ubuntu-touch-arm-linux-gnueabihf-v2015.11-640-g17e9a8e.targz
 # koreader-android-arm-linux-androideabi-v2015.11-654-gb7392f7.apk
 artifact_re = re.compile(
-    ('.*/koreader-([a-z\-]+)-arm-.*-'
+    ('.*/koreader-([a-z\-]+)-(arm|i686)-.*-'
      'v[0-9]{4}.[0-9]{2}-[0-9]+-g[0-9a-z]{7}\.([a-z]+).*'))
 version_re = re.compile(
     'koreader-.*-(v[0-9]{4}.[0-9]{2}-[0-9]+-g[0-9a-z]{7})\.[a-z]+')
@@ -116,6 +116,7 @@ def get_artifact_metadata(artifact_zip):
 
 download_artifact_ext_map = {
     'build_android': 'apk',
+    'build_android_x86': 'apk',
     'build_ubuntutouch': 'click',
 }
 
@@ -163,7 +164,7 @@ def extract_build(artifact_zip, build):
 
     tmp_artifact_path = tmp_version_dir + download_artifact
     tmp_targz_path = tmp_version_dir + artifact['targz']
-    if build['name'] == 'build_android':
+    if build['name'].startswith('build_android'):
         sign_apk(tmp_artifact_path)
     shutil.move(tmp_artifact_path, download_artifact_path)
     # also make a copy of targz for rebuilding zsync index if needed
