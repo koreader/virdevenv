@@ -42,7 +42,7 @@ STABLE_BUILD_DIR = BUILD_DIR + 'stable'
 # koreader-ubuntu-touch-arm-linux-gnueabihf-v2015.11-640-g17e9a8e.targz
 # koreader-android-arm-linux-androideabi-v2015.11-654-gb7392f7.apk
 artifact_re = re.compile(
-    ('.*/koreader-([a-z\-]+)-(arm|i686)-.*-'
+    ('.*/koreader-([a-z\-]+)-(?:arm|i686)-.*-'
      'v[0-9]{4}.[0-9]{2}-[0-9]+-g[0-9a-z]{7}\.([a-z]+).*'))
 version_re = re.compile(
     'koreader-.*-(v[0-9]{4}.[0-9]{2}-[0-9]+-g[0-9a-z]{7})\.[a-z]+')
