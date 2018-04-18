@@ -18,16 +18,17 @@ echo " ------------------------------------------"
 echo "| installing dependencies..."
 echo "| $LUAJIT_DEPS "
 echo " ------------------------------------------"
+
 apt-get install -y \
 	$MISC_TOOLS \
-	build-essential dpkg-dev python-setuptools \
+	build-essential dpkg-dev python3-pip \
 	gcc-4.8 cpp-4.8 g++-4.8 make automake cmake ccache \
 	patch libtool nasm autoconf2.64 \
 	$TC_BUILD_DEPS \
 	$GLIB_DEPS \
 	$ARM_SF_TC $ARM_HF_TC \
 	$LUAJIT_DEPS \
-	libsdl2-dev
+	libsdl2-2.0-0
 
-sudo easy_install pip
-sudo pip install transifex-client
+# --upgrade to prevent urllib3 errors
+pip3 install transifex-client --upgrade
