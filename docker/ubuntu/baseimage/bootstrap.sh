@@ -30,4 +30,5 @@ apt-get install -y \
 	$LUAJIT_DEPS \
 	libsdl2-2.0-0
 
-pip3 install transifex-client
+# --upgrade to prevent urllib3 errors
+pip3 install transifex-client --upgrade
