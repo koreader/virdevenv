@@ -3,7 +3,7 @@
 echo "Building toolchains for kobo..."
 git clone https://github.com/koreader/koxtoolchain.git
 pushd koxtoolchain
-git checkout 47acb959b6169b5d1e546814d1747a8f88484b1b
+git checkout 2a79651be67b273beb6329bdd249f9e1fdf55e7b
 
 ./gen-tc.sh kobo
 popd
