@@ -21,7 +21,7 @@ echo " ------------------------------------------"
 
 apt-get install -y \
 	$MISC_TOOLS \
-	build-essential dpkg-dev python3-pip \
+	build-essential dpkg-dev pkg-config python3-pip \
 	gcc-4.8 cpp-4.8 g++-4.8 make automake cmake ccache \
 	patch libtool nasm autoconf2.64 \
 	$TC_BUILD_DEPS \
