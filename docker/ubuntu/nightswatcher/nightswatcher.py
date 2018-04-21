@@ -42,7 +42,7 @@ STABLE_BUILD_DIR = BUILD_DIR + 'stable'
 # koreader-ubuntu-touch-arm-linux-gnueabihf-v2015.11-640-g17e9a8e_2018-03-09.targz
 # koreader-android-arm-linux-androideabi-v2015.11-654-gb7392f7_2018-03-09.apk
 artifact_re = re.compile(
-    ('.*/koreader-([a-z\-]+)-(?:arm|i686)-.*-'
+    ('.*/koreader-([a-z0-9\-]+)-(?:arm|i686)-.*-'
      'v[0-9]{4}.[0-9]{2}-[0-9]+-g[0-9a-z]{7}_[0-9]{4}-[0-9]{2}-[0-9]{2}\.([a-z]+).*'))
 version_re = re.compile(
     'koreader-.*-(v[0-9]{4}.[0-9]{2}-[0-9]+-g[0-9a-z]{7}_[0-9]{4}-[0-9]{2}-[0-9]{2})\.[a-z]+')
@@ -121,6 +121,7 @@ download_artifact_ext_map = {
 }
 
 ota_models = frozenset(['build_kindle', 'build_legacy_kindle',
+                        'build_kindle5', 'build_kindlepw2',
                         'build_kobo', 'build_pocketbook'])
 
 
