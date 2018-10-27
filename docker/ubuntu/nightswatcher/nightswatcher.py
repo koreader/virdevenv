@@ -120,9 +120,12 @@ download_artifact_ext_map = {
     'build_ubuntutouch': 'click',
 }
 
-ota_models = frozenset(['build_kindle', 'build_legacy_kindle',
+# names come from GitLab, see https://gitlab.com/koreader/nightly-builds/blob/master/.gitlab-ci.yml
+ota_models = frozenset(['build_android', 'build_android_x86',
+                        'build_kindle', 'build_legacy_kindle',
                         'build_kindle5', 'build_kindlepw2',
-                        'build_kobo', 'build_pocketbook'])
+                        'build_kobo', 'build_pocketbook',
+                        'build_sony_prstux'])
 
 
 def extract_build(artifact_zip, build):
@@ -173,7 +176,7 @@ def extract_build(artifact_zip, build):
 
     # build zsync metadata for kindle, kobo and pocketbook OTA
     if build['name'] in ota_models:
-        # FIXME: check verion in latest-nightly and skip old versions
+        # FIXME: check version in latest-nightly and skip old versions
         zsync_file = OTA_DIR + ('koreader-%s-latest-nightly.zsync' % platform)
         shutil.move(tmp_targz_path, OTA_DIR)
         run_cmd(['zsyncmake', OTA_DIR + artifact['targz'],
