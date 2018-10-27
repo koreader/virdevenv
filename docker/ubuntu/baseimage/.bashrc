@@ -11,7 +11,10 @@ if [ -f ${HOME}/local/bin/luarocks ]; then
 fi
 
 XTOOLS=${HOME}/x-tools
-export PATH=${XTOOLS}/arm-kobo-linux-gnueabihf/bin:${XTOOLS}/arm-kindlepw2-linux-gnueabi/bin:${XTOOLS}/arm-kindle5-linux-gnueabi/bin:${XTOOLS}/arm-kindle-linux-gnueabi/bin:$PATH
+
+for tc in "${XTOOLS}"/*/bin; do
+    export PATH=$tc:$PATH;
+done
 
 alias ls='ls --color=auto'
 alias rm='rm -i'
