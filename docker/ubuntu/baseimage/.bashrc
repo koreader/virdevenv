@@ -7,7 +7,7 @@ HOME=/home/ko
 export PATH=$HOME/local/bin:$PATH
 if [ -f ${HOME}/local/bin/luarocks ]; then
     # add local rocks to $PATH
-    eval $(luarocks path --bin)
+    eval "$(luarocks path --bin)"
 fi
 
 XTOOLS=${HOME}/x-tools
@@ -20,5 +20,5 @@ alias mv='mv -i'
 
 mkcd () {
     mkdir -p "$*"
-    cd "$*"
+    cd "$*" || exit
 }

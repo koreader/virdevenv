@@ -15,6 +15,7 @@ echo 'export PATH=$NDK:$ANDROID_HOME/tools/bin:$ANDROID_HOME/tools:$PATH' >> ~/.
 ANDROID_SDK_VER=24.0.3
 echo "export PATH=\$ANDROID_HOME/build-tools/${ANDROID_SDK_VER}:\$PATH" >> ~/.bashrc
 
+# shellcheck source=/dev/null
 source ~/.bashrc
 # NOTE: get list of packages with `android list sdk -e`
 echo -e "y" | android update sdk --no-ui -a --filter \

@@ -1,13 +1,15 @@
+#!/usr/bin/env bash
+
 HOME=/home/ko
 
-cd $HOME
+cd $HOME || exit
 
 git clone https://github.com/torch/luajit-rocks.git
-cd luajit-rocks
+cd luajit-rocks || exit
 	git checkout 6529891
 	cmake . -DWITH_LUAJIT21=ON -DCMAKE_INSTALL_PREFIX=${HOME}/local
 	make install
-cd -
+cd - || exit
 rm -rf luajit-rocks
 
 mkdir ${HOME}/.luarocks
