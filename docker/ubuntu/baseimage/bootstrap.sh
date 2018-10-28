@@ -14,7 +14,7 @@ MISC_TOOLS=(git subversion zip unzip vim wget p7zip-full bash-completion)
 LUAJIT_DEPS=($LIB32_GCC_DEV libc6-dev-amd64:i386)
 GLIB_DEPS="gettext"
 
-APPIMAGE_DEPS=(libsdl2-2.0-0 libcairo2)
+APPIMAGE_DEPS=(libsdl2-2.0-0)
 
 echo " ------------------------------------------"
 echo "| installing dependencies..."
