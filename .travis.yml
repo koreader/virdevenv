@@ -1,0 +1,6 @@
+addons:
+  apt:
+    packages:
+      - xz-utils
+
+script: .ci/script.sh

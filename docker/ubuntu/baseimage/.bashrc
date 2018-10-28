@@ -2,6 +2,7 @@
 
 HOME=/home/ko
 
+# shellcheck source=/dev/null
 . /etc/bash_completion
 
 export PATH=$HOME/local/bin:$PATH
@@ -13,7 +14,7 @@ fi
 XTOOLS=${HOME}/x-tools
 
 for tc in "${XTOOLS}"/*/bin; do
-    export PATH=$tc:$PATH;
+    export PATH=$tc:$PATH
 done
 
 alias ls='ls --color=auto'
@@ -21,7 +22,7 @@ alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
 
-mkcd () {
+mkcd() {
     mkdir -p "$*"
     cd "$*" || exit
 }
