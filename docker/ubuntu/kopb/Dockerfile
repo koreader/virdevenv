@@ -1,4 +1,4 @@
-FROM houqp/kobase:0.0.5
+FROM frenzie/kobase:0.0.10
 
 ENV DEBIAN_FRONTEND noninteractive
 

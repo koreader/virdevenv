@@ -1,4 +1,4 @@
-FROM frenzie/kobase:0.0.7
+FROM frenzie/kobase:0.0.10
 
 USER ko
 
