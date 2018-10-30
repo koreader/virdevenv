@@ -1,4 +1,4 @@
-FROM phusion/baseimage:0.9.18
+FROM phusion/baseimage:0.10.2
 
 ADD ./bootstrap.sh /bootstrap.sh
 RUN /bootstrap.sh
