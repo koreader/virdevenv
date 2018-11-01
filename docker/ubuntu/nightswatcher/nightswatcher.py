@@ -43,9 +43,9 @@ STABLE_BUILD_DIR = BUILD_DIR + 'stable'
 # koreader-android-arm-linux-androideabi-v2015.11-654-gb7392f7_2018-03-09.apk
 artifact_re = re.compile(
     ('.*/koreader-([a-z0-9\-]+)-(?:arm|i686)-.*-'
-     'v[0-9]{4}.[0-9]{2}(?:-[0-9]+)?(?:-g[0-9a-z]{7}_[0-9]{4}-[0-9]{2}-[0-9]{2})?\.([a-z]+).*'))
+     'v[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-[0-9]+)?(?:-g[0-9a-z]{7}_[0-9]{4}-[0-9]{2}-[0-9]{2})?\.([a-z]+).*'))
 version_re = re.compile(
-    'koreader-.*-(v[0-9]{4}.[0-9]{2}(?:-[0-9]+)?(?:-g[0-9a-z]{7}_[0-9]{4}-[0-9]{2}-[0-9]{2})?)\.[a-z]+')
+    'koreader-.*-(v[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-[0-9]+)?(?:-g[0-9a-z]{7}_[0-9]{4}-[0-9]{2}-[0-9]{2})?)\.[a-z]+')
 
 def trigger_build():
     repo = 'koreader%2Fnightly-builds'
@@ -116,11 +116,13 @@ def get_artifact_metadata(artifact_zip):
 download_artifact_ext_map = {
     'build_android': 'apk',
     'build_android_x86': 'apk',
+    'build_appimage': 'AppImage',
     'build_ubuntutouch': 'click',
 }
 
 # names come from GitLab, see https://gitlab.com/koreader/nightly-builds/blob/master/.gitlab-ci.yml
 ota_models = frozenset(['build_android', 'build_android_x86',
+                        'build_cervantes',
                         'build_kindle', 'build_legacy_kindle',
                         'build_kindle5', 'build_kindlepw2',
                         'build_kobo', 'build_pocketbook',
