@@ -43,10 +43,9 @@ STABLE_BUILD_DIR = BUILD_DIR + 'stable'
 # koreader-android-arm-linux-androideabi-v2015.11-654-gb7392f7_2018-03-09.apk
 artifact_re = re.compile(
     ('.*/koreader-([a-z0-9\-]+)-(?:arm|i686)-.*-'
-     'v[0-9]{4}.[0-9]{2}-[0-9]+-g[0-9a-z]{7}_[0-9]{4}-[0-9]{2}-[0-9]{2}\.([a-z]+).*'))
+     'v[0-9]{4}.[0-9]{2}(?:-[0-9]+)?(?:-g[0-9a-z]{7}_[0-9]{4}-[0-9]{2}-[0-9]{2})?\.([a-z]+).*'))
 version_re = re.compile(
-    'koreader-.*-(v[0-9]{4}.[0-9]{2}-[0-9]+-g[0-9a-z]{7}_[0-9]{4}-[0-9]{2}-[0-9]{2})\.[a-z]+')
-
+    'koreader-.*-(v[0-9]{4}.[0-9]{2}(?:-[0-9]+)?(?:-g[0-9a-z]{7}_[0-9]{4}-[0-9]{2}-[0-9]{2})?)\.[a-z]+')
 
 def trigger_build():
     repo = 'koreader%2Fnightly-builds'
