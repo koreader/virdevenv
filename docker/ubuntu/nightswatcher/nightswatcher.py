@@ -74,8 +74,6 @@ def run_cmd(cmd):
 def sign_apk(apk_path):
     # TODO: move to apk signature scheme v2 for faster install on
     # android N
-    logger.info('Removing existing debug signature from %s...', apk_path)
-    run_cmd(['zip', '-d', apk_path, 'META-INF/*'])
 
     logger.info('Signing %s...', apk_path)
     re = gevent.subprocess.check_output(
