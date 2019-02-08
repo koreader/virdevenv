@@ -27,6 +27,7 @@ build_fetch_queue = queue.Queue()
 
 
 APK_SIGN_KEY_PASS = os.environ['APK_SIGN_KEY_PASS']
+APK_SIGN_KEY_ALIAS = os.environ['APK_SIGN_KEY_ALIAS']
 APK_SIGN_STORE_PASS = os.environ['APK_SIGN_STORE_PASS']
 GITLAB_TOKEN = os.environ['GITLAB_WEBHOOK_TOKEN']
 GITLAB_TRIGGER_TOKEN = os.environ['GITLAB_TRIGGER_TOKEN']
@@ -72,23 +73,17 @@ def run_cmd(cmd):
 
 
 def sign_apk(apk_path):
-    # TODO: move to apk signature scheme v2 for faster install on
-    # android N
-
     logger.info('Signing %s...', apk_path)
     re = gevent.subprocess.check_output(
-        ['jarsigner', '-verbose', '-sigalg', 'SHA1withRSA',
-         '-digestalg', 'SHA1', '-tsa', 'http://timestamp.digicert.com',
-         '-keystore', APK_SIGN_KEY_STORE_PATH,
-         '-keypass', APK_SIGN_KEY_PASS,
-         '-storepass', APK_SIGN_STORE_PASS,
-         apk_path, 'koreader_release'])
-    logger.info('Output from jarsigner:\n%s', re)
-
-    aligned_apk_path = apk_path + '_apligned'
-    run_cmd(['zipalign', '-v', '4', apk_path, aligned_apk_path])
-
-    run_cmd(['mv', '-f', aligned_apk_path, apk_path])
+        ['java', '-jar', 'uber-apk-signer.jar',
+         '--ks', APK_SIGN_KEY_STORE_PATH,
+         '--ksAlias', APK_SIGN_KEY_ALIAS,
+         '--ksKeyPass', APK_SIGN_KEY_PASS,
+         '--ksPass', APK_SIGN_STORE_PASS,
+         '--apks', apk_path,
+         '--overwrite',
+         '--verbose'])
+    logger.info('Output from uber-apk-signer:\n%s', re)
 
 
 def get_artifact_metadata(artifact_zip):
