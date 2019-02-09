@@ -43,8 +43,11 @@ STABLE_BUILD_DIR = BUILD_DIR + 'stable'
 # koreader-ubuntu-touch-arm-linux-gnueabihf-v2015.11-640-g17e9a8e_2018-03-09.targz
 # koreader-android-arm-linux-androideabi-v2015.11-654-gb7392f7_2018-03-09.apk
 artifact_re = re.compile(
-    ('.*/koreader-([a-z0-9\-]+)-(?:arm|i686|x86_64)-.*-'
-     '(v[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-[0-9]+)?(?:-g[0-9a-z]{7}_[0-9]{4}-[0-9]{2}-[0-9]{2})?)\.([A-Za-z]+).*'))
+    ('.*/koreader-'
+     '(?P<platform>[a-z0-9\-]+)-'
+     '(?P<arch>arm|i686|x86_64)-.*-'
+     '(?P<version>v[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-(?P<commit_number>[0-9]+))?(?:-g(?P<commit_hash>[0-9a-z]{7})_(?P<commit_date>[0-9]{4}-[0-9]{2}-[0-9]{2})?))'
+     '\.(?P<ftype>[A-Za-z]+).*'))
 
 def trigger_build():
     repo = 'koreader%2Fnightly-builds'
@@ -93,16 +96,25 @@ def get_artifact_metadata(artifact_zip):
 
     platform = None
     version = None
+    commit_number = None
     artifact = {}
     for f in zf.namelist():
         m = artifact_re.match(f)
         if not m:
             continue
-        platform, version, ftype = m.groups()
+        platform = m.group("platform")
+        version = m.group("version")
+        commit_number = m.group("commit_number")
+        ftype = m.group("ftype")
         artifact[ftype] = os.path.basename(f.strip())
 
     zf.close()
-    return platform, version, artifact
+    return platform, version, commit_number, artifact
+
+
+# git-describe adds a commit number and commit hash prefixed by -g if it's not the tag itself
+def is_stable(commit_number):
+    return commit_number is None
 
 
 download_artifact_ext_map = {
@@ -123,7 +135,8 @@ ota_models = frozenset(['build_android', 'build_android_x86',
 
 def extract_build(artifact_zip, build):
     # caller is responsible for removing artifact_zip
-    platform, version, artifact = get_artifact_metadata(artifact_zip)
+    platform, version, commit_number, artifact = get_artifact_metadata(artifact_zip)
+    stable = is_stable(commit_number)
     if not platform or not artifact_zip:
         logger.error(
             'Invalid build artifact, failed to extract metadata from zipfile.')
@@ -140,7 +153,7 @@ def extract_build(artifact_zip, build):
         return
 
     # check to see if we already have the build
-    version_dir = '%s/%s/' % (NIGHTLY_BUILD_DIR, version)
+    version_dir = '%s/%s/' % (stable is True and STABLE_BUILD_DIR or NIGHTLY_BUILD_DIR, version)
 
     download_artifact = artifact[download_artifact_ext]
     download_artifact_path = version_dir + download_artifact
@@ -167,12 +180,21 @@ def extract_build(artifact_zip, build):
     if build['name'] in ota_models:
         tmp_targz_path = tmp_version_dir + artifact['targz']
         # FIXME: check version in latest-nightly and skip old versions
-        zsync_file = OTA_DIR + ('koreader-%s-latest-nightly.zsync' % platform)
+        if build['name'] == 'build_android_x86':
+            platform = platform + '-x86'
+
+        zsync_file_stable = OTA_DIR + ('koreader-%s-latest-stable.zsync' % platform)
+        zsync_file_nightly = OTA_DIR + ('koreader-%s-latest-nightly.zsync' % platform)
+        zsync_file = stable is True and zsync_file_stable or zsync_file_nightly
+
         shutil.move(tmp_targz_path, OTA_DIR)
         run_cmd(['zsyncmake', OTA_DIR + artifact['targz'],
                  '-u', artifact['targz'], '-o', zsync_file])
+
+        if stable is True:
+            shutil.copy2(zsync_file, zsync_file_nightly)
         # TODO: find the new targz file by reading the second line of zsync
-        # file, then purge the old targzs
+        # file, then purge older targzs
 
     shutil.rmtree(tmp_version_dir)
 
