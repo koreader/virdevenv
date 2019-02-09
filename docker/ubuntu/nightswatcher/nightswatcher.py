@@ -43,10 +43,8 @@ STABLE_BUILD_DIR = BUILD_DIR + 'stable'
 # koreader-ubuntu-touch-arm-linux-gnueabihf-v2015.11-640-g17e9a8e_2018-03-09.targz
 # koreader-android-arm-linux-androideabi-v2015.11-654-gb7392f7_2018-03-09.apk
 artifact_re = re.compile(
-    ('.*/koreader-([a-z0-9\-]+)-(?:arm|i686)-.*-'
-     'v[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-[0-9]+)?(?:-g[0-9a-z]{7}_[0-9]{4}-[0-9]{2}-[0-9]{2})?\.([a-z]+).*'))
-version_re = re.compile(
-    'koreader-.*-(v[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-[0-9]+)?(?:-g[0-9a-z]{7}_[0-9]{4}-[0-9]{2}-[0-9]{2})?)\.[a-z]+')
+    ('.*/koreader-([a-z0-9\-]+)-(?:arm|i686|x86_64)-.*-'
+     '(v[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-[0-9]+)?(?:-g[0-9a-z]{7}_[0-9]{4}-[0-9]{2}-[0-9]{2})?)\.([A-Za-z]+).*'))
 
 def trigger_build():
     repo = 'koreader%2Fnightly-builds'
@@ -94,16 +92,17 @@ def get_artifact_metadata(artifact_zip):
         return None, None
 
     platform = None
+    version = None
     artifact = {}
     for f in zf.namelist():
         m = artifact_re.match(f)
         if not m:
             continue
-        platform, ftype = m.groups()
+        platform, version, ftype = m.groups()
         artifact[ftype] = os.path.basename(f.strip())
 
     zf.close()
-    return platform, artifact
+    return platform, version, artifact
 
 
 download_artifact_ext_map = {
@@ -124,14 +123,14 @@ ota_models = frozenset(['build_android', 'build_android_x86',
 
 def extract_build(artifact_zip, build):
     # caller is responsible for removing artifact_zip
-    platform, artifact = get_artifact_metadata(artifact_zip)
+    platform, version, artifact = get_artifact_metadata(artifact_zip)
     if not platform or not artifact_zip:
         logger.error(
             'Invalid build artifact, failed to extract metadata from zipfile.')
         return
 
     # validate artifact_zip
-    if 'targz' not in artifact:
+    if build['name'] in ota_models and 'targz' not in artifact:
         logger.error('Invalid build artifact, missing targz file.')
         return
     download_artifact_ext = download_artifact_ext_map.get(build['name'], 'zip')
@@ -141,7 +140,6 @@ def extract_build(artifact_zip, build):
         return
 
     # check to see if we already have the build
-    version = version_re.match(artifact['targz']).group(1)
     version_dir = '%s/%s/' % (NIGHTLY_BUILD_DIR, version)
 
     download_artifact = artifact[download_artifact_ext]
@@ -161,15 +159,13 @@ def extract_build(artifact_zip, build):
     run_cmd(unzip_cmd)
 
     tmp_artifact_path = tmp_version_dir + download_artifact
-    tmp_targz_path = tmp_version_dir + artifact['targz']
     if build['name'].startswith('build_android'):
         sign_apk(tmp_artifact_path)
     shutil.move(tmp_artifact_path, download_artifact_path)
-    # also make a copy of targz for rebuilding zsync index if needed
-    shutil.copy2(tmp_targz_path, version_dir)
 
     # build zsync metadata for kindle, kobo and pocketbook OTA
     if build['name'] in ota_models:
+        tmp_targz_path = tmp_version_dir + artifact['targz']
         # FIXME: check version in latest-nightly and skip old versions
         zsync_file = OTA_DIR + ('koreader-%s-latest-nightly.zsync' % platform)
         shutil.move(tmp_targz_path, OTA_DIR)
