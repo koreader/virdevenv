@@ -1,9 +1,9 @@
 FROM phusion/baseimage:0.10.2
 
 ADD ./bootstrap.sh /bootstrap.sh
-RUN /bootstrap.sh
-RUN apt-get clean
-RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN /bootstrap.sh && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN useradd -m ko
 RUN usermod -aG sudo ko
