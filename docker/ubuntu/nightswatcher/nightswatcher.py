@@ -125,7 +125,10 @@ download_artifact_ext_map = {
 }
 
 # names come from GitLab, see https://gitlab.com/koreader/nightly-builds/blob/master/.gitlab-ci.yml
-ota_models = frozenset(['build_android', 'build_android_x86',
+ota_link_models = frozenset([
+                        'build_android', 'build_android_x86',
+                        'build_appimage'])
+ota_zsync_models = frozenset([
                         'build_cervantes',
                         'build_kindle', 'build_legacy_kindle',
                         'build_kindle5', 'build_kindlepw2',
@@ -143,7 +146,7 @@ def extract_build(artifact_zip, build):
         return
 
     # validate artifact_zip
-    if build['name'] in ota_models and 'targz' not in artifact:
+    if build['name'] in ota_zsync_models and 'targz' not in artifact:
         logger.error('Invalid build artifact, missing targz file.')
         return
     download_artifact_ext = download_artifact_ext_map.get(build['name'], 'zip')
@@ -174,10 +177,29 @@ def extract_build(artifact_zip, build):
     tmp_artifact_path = tmp_version_dir + download_artifact
     if build['name'].startswith('build_android'):
         sign_apk(tmp_artifact_path)
-    shutil.move(tmp_artifact_path, download_artifact_path)
+    shutil.copy2(tmp_artifact_path, download_artifact_path)
+
+    ota_artifact_path = tmp_version_dir + download_artifact
+    # point update pointer to the right location
+    if build['name'] in ota_link_models:
+        if build['name'] == 'build_android_x86':
+            platform = platform + '-x86'
+
+        link_file_stable = OTA_DIR + ('koreader-%s-latest-stable' % platform)
+        link_file_nightly = OTA_DIR + ('koreader-%s-latest-nightly' % platform)
+        link_file = stable is True and link_file_stable or link_file_nightly
+
+        os.symlink(download_artifact_path, OTA_DIR + download_artifact)
+
+        f = open(link_file, "w")
+        f.write(download_artifact)
+        f.close()
+
+        if stable is True:
+            shutil.copy2(link_file, link_nightly)
 
     # build zsync metadata for kindle, kobo and pocketbook OTA
-    if build['name'] in ota_models:
+    if build['name'] in ota_zsync_models:
         tmp_targz_path = tmp_version_dir + artifact['targz']
         # FIXME: check version in latest-nightly and skip old versions
         if build['name'] == 'build_android_x86':
