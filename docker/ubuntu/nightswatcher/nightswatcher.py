@@ -46,7 +46,7 @@ artifact_re = re.compile(
     ('.*/koreader-'
      '(?P<platform>[a-z0-9\-]+)-'
      '(?P<arch>arm|i686|x86_64)-.*-'
-     '(?P<version>v[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-(?P<commit_number>[0-9]+))?(?:-g(?P<commit_hash>[0-9a-z]{7})_(?P<commit_date>[0-9]{4}-[0-9]{2}-[0-9]{2})?))'
+     '(?P<version>v[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-(?P<commit_number>[0-9]+))?(?:-g(?P<commit_hash>[0-9a-z]{7})_(?P<commit_date>[0-9]{4}-[0-9]{2}-[0-9]{2})?)?)'
      '\.(?P<ftype>[A-Za-z]+).*'))
 
 def trigger_build():
@@ -196,7 +196,7 @@ def extract_build(artifact_zip, build):
         f.close()
 
         if stable is True:
-            shutil.copy2(link_file, link_nightly)
+            shutil.copy2(link_file, link_file_nightly)
 
     # build zsync metadata for kindle, kobo and pocketbook OTA
     if build['name'] in ota_zsync_models:
