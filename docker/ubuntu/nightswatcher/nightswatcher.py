@@ -196,6 +196,8 @@ def extract_build(artifact_zip, build):
         f.close()
 
         if stable is True:
+            if os.path.exists(link_file_nightly):
+                os.remove(link_file_nightly)
             shutil.copy2(link_file, link_file_nightly)
 
     # build zsync metadata for kindle, kobo and pocketbook OTA
