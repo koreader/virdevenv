@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 # for linux-libc-dev:i386, which is needed by LuaJIT
 dpkg --add-architecture i386

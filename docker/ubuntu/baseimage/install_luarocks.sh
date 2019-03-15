@@ -20,7 +20,7 @@ export PATH=$HOME/local/bin:$PATH
 echo "wrap_bin_scripts = false" >>${HOME}/.luarocks/config.lua
 luarocks --local install luafilesystem
 luarocks --local install ansicolors
-luarocks --local install busted 2.0.rc11-0
+luarocks --local install busted 2.0.rc12-1
 luarocks --local install luacov
 # luasec doesn't automatically detect 64-bit libs
 luarocks --local install luasec OPENSSL_LIBDIR=/usr/lib/x86_64-linux-gnu
