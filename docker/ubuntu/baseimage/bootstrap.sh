@@ -27,6 +27,7 @@ apt-get install -y \
     "${MISC_TOOLS[@]}" \
     build-essential dpkg-dev pkg-config python3-pip \
     gcc-5 cpp-5 g++-5 make automake cmake ccache \
+    ninja-build \
     patch libtool nasm autoconf2.64 \
     "${TC_BUILD_DEPS[@]}" \
     $GLIB_DEPS \
