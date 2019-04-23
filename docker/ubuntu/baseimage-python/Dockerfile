@@ -1,4 +1,4 @@
-FROM frenzie/kobase:0.1.2
+FROM koreader/kobase:0.1.3
 
 USER root
 RUN apt-get update \
