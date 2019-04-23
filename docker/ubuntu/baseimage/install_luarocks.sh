@@ -6,7 +6,7 @@ cd $HOME || exit
 
 git clone https://github.com/torch/luajit-rocks.git
 pushd luajit-rocks && {
-    git checkout 6529891
+    git checkout 2c7496b905f6f972673effda4884766433b7583b
     cmake . -DWITH_LUAJIT21=ON -DCMAKE_INSTALL_PREFIX=${HOME}/local
     make install
 } && popd || exit
@@ -20,7 +20,7 @@ export PATH=$HOME/local/bin:$PATH
 echo "wrap_bin_scripts = false" >>${HOME}/.luarocks/config.lua
 luarocks --local install luafilesystem
 luarocks --local install ansicolors
-luarocks --local install busted 2.0.rc12-1
+luarocks --local install busted 2.0.rc13-0
 luarocks --local install luacov
 # luasec doesn't automatically detect 64-bit libs
 luarocks --local install luasec OPENSSL_LIBDIR=/usr/lib/x86_64-linux-gnu

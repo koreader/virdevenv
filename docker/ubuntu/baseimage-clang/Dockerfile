@@ -1,4 +1,4 @@
-FROM frenzie/kobase:0.1.2
+FROM koreader/kobase:0.1.3
 
 USER root
 COPY clang7.list /etc/apt/sources.list.d/clang7.list
