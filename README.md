@@ -1,11 +1,20 @@
 # Virtual dev environment for KOReader
 
-Docker is generally the preferred method.
+Docker is the preferred method for building KOReader without setting up the dependencies on your local system. These are the very same Docker images used to create the KOReader builds every night.
 
-Normally all of the Docker images should already have been built and pushed, so you only need to pull them.
+Normally all of the Docker images should already have been built and pushed to [Docker Hub](https://hub.docker.com/u/koreader), so you only need to pull them.
 
-See the Travis setup in base and the nightly builds on GitLab for the specifics:
+To mount a local folder in your Docker container, you can use the `-v` flag. Following along from [the main project's README](https://github.com/koreader/koreader#getting-the-source), you can run a series of commands along these lines:
+```
+git clone https://github.com/koreader/koreader.git
+docker run -v $(pwd)/koreader:/home/ko/koreader -it koreader/koappimage:latest bash
+cd koreader && ./kodev fetch-thirdparty
+```
 
-https://github.com/koreader/koreader-base/blob/c07d2bae4d21737be93a712e6e86e688aced77b3/.travis.yml#L21-L24
+You can even run the emulator directly from the Docker container provided you have a local X server, more details [here](http://fabiorehm.com/blog/2014/09/11/running-gui-apps-with-docker/). Some further possibilities (e.g., for Mac OS X and Windows) are explored [here](https://stackoverflow.com/questions/16296753/can-you-run-gui-applications-in-a-docker-container). NB The following command assumes KOReader is harmless and partially breaks the regular Docker container isolation.
 
-https://gitlab.com/koreader/nightly-builds/blob/eee7d253cc28037898becc307f38938d309d38c2/.gitlab-ci.yml#L7
+```
+docker run -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v $(pwd)/koreader:/home/ko/koreader -it koreader/koappimage:0.1.5 bash -c "source ~/.bashrc && pushd koreader && ./kodev run"
+```
+
+See the CI setup in the main and base repos, as well as the nightly builds on GitLab for further guidance.
