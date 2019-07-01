@@ -2,6 +2,6 @@
 
 echo "Downloading NDK..."
 rm Makefile
-wget https://raw.githubusercontent.com/koreader/koreader-base/9135bfbe6bd2f00969a721bd79c7c67100f975d5/toolchain/Makefile
+wget https://raw.githubusercontent.com/koreader/koreader-base/f07042f179127b73bc0a2d0b751fb1fdeadaac4f/toolchain/Makefile
 echo -e "y" | make android-ndk android-sdk
 rm Makefile
