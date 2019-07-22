@@ -8,7 +8,7 @@ RUN apt-get update && \
 
 USER ko
 WORKDIR /home/ko
-ADD ./fetch_android_tc.sh /home/ko/fetch_android_tc.sh
-ADD ./build_android_tc.sh /home/ko/build_android_tc.sh
+COPY ./fetch_android_tc.sh /home/ko/fetch_android_tc.sh
+COPY ./build_android_tc.sh /home/ko/build_android_tc.sh
 RUN ./fetch_android_tc.sh && \
     ./build_android_tc.sh
