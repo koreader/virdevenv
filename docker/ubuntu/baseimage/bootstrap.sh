@@ -36,3 +36,19 @@ apt-get install -y \
 
 # --upgrade to prevent urllib3 errors
 pip3 install transifex-client --upgrade
+
+# compile custom xgettext with newline patch, cf. https://github.com/koreader/koreader/pull/5238#issuecomment-523794831
+# upstream bug https://savannah.gnu.org/bugs/index.php?56794
+GETTEXT_VER=0.20.1
+wget http://ftpmirror.gnu.org/gettext/gettext-${GETTEXT_VER}.tar.gz
+tar -xf gettext-${GETTEXT_VER}.tar.gz
+pushd gettext-${GETTEXT_VER} && {
+    wget -O ignore-first-newline-of-Lua-multiline-string.patch https://savannah.gnu.org/bugs/download.php?file_id=47379
+    patch -p1 < ignore-first-newline-of-Lua-multiline-string.patch
+    ./configure
+    make -j$(nproc)
+    make install
+    ldconfig
+} && popd
+rm gettext-${GETTEXT_VER}.tar.gz
+rm -rf gettext-${GETTEXT_VER}

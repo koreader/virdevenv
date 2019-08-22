@@ -1,4 +1,4 @@
-FROM koreader/kobase:0.1.3
+FROM koreader/kobase:0.1.4
 
 USER root
 RUN apt-get update \
