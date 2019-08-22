@@ -43,10 +43,10 @@ GETTEXT_VER=0.20.1
 wget http://ftpmirror.gnu.org/gettext/gettext-${GETTEXT_VER}.tar.gz
 tar -xf gettext-${GETTEXT_VER}.tar.gz
 pushd gettext-${GETTEXT_VER} && {
-    wget -O ignore-first-newline-of-Lua-multiline-string.patch https://savannah.gnu.org/bugs/download.php?file_id=47379
-    patch -p1 < ignore-first-newline-of-Lua-multiline-string.patch
+    wget -O ignore-first-newline-of-lua-multiline-string.patch https://savannah.gnu.org/bugs/download.php?file_id=47379
+    patch -p1 <ignore-first-newline-of-lua-multiline-string.patch
     ./configure
-    make -j$(nproc)
+    make -j"$(nproc)"
     make install
     ldconfig
 } && popd
