@@ -10,3 +10,5 @@ shell:
 
 push:
 	docker push $(USER)/kokobo:$(VERSION)
+
+.PHONY: all clean test push shell

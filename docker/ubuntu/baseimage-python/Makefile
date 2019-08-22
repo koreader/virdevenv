@@ -10,3 +10,5 @@ shell:
 
 push:
 	docker push $(USER)/kobase-python:$(VERSION)
+
+.PHONY: all clean test push shell

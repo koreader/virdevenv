@@ -10,3 +10,5 @@ shell:
 
 push:
 	docker push $(USER)/koandroid:$(VERSION)
+
+.PHONY: all clean test push shell
