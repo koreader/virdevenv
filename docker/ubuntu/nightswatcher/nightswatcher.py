@@ -182,9 +182,6 @@ def extract_build(artifact_zip, build):
     ota_artifact_path = tmp_version_dir + download_artifact
     # point update pointer to the right location
     if build['name'] in ota_link_models:
-        if build['name'] == 'build_android_x86':
-            platform = platform + '-x86'
-
         link_file_stable = OTA_DIR + ('koreader-%s-latest-stable' % platform)
         link_file_nightly = OTA_DIR + ('koreader-%s-latest-nightly' % platform)
         link_file = stable is True and link_file_stable or link_file_nightly
