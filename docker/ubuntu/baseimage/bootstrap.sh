@@ -17,6 +17,7 @@ MISC_TOOLS=(git subversion zip unzip vim wget p7zip-full bash-completion
     sudo libtool libtool-bin)
 LUAJIT_DEPS=("${LIB32_GCC_DEV[@]}" libc6-dev-amd64:i386)
 GLIB_DEPS="gettext"
+HARFBUZZ_DEPS="ragel"
 
 echo " ------------------------------------------"
 echo "| installing dependencies..."
@@ -31,6 +32,7 @@ apt-get install -y \
     patch libtool nasm autoconf2.64 \
     "${TC_BUILD_DEPS[@]}" \
     $GLIB_DEPS \
+    $HARFBUZZ_DEPS \
     "${ARM_SF_TC[@]}" "${ARM_HF_TC[@]}" \
     "${LUAJIT_DEPS[@]}"
 

@@ -1,4 +1,4 @@
-FROM frenzie/kobase-python:0.1.2
+FROM koreader/kobase-python:0.1.5
 
 USER root
 RUN apt-get update && \

@@ -1,4 +1,4 @@
-FROM koreader/kobase:0.1.4
+FROM koreader/kobase:0.1.5
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 

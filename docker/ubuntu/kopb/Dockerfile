@@ -1,4 +1,4 @@
-FROM frenzie/kobase-python:0.1.2
+FROM koreader/kobase-python:0.1.5
 
 ENV DEBIAN_FRONTEND noninteractive
 
