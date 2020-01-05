@@ -3,7 +3,7 @@
 echo "Building toolchains for cervantes..."
 git clone https://github.com/koreader/koxtoolchain.git
 pushd koxtoolchain && {
-    git checkout 1f65f8df7844da7675f76b48793e301db87cc18c
+    git checkout 576338981f3ba6723801c3056ae2c7ca33915181
 
     ./gen-tc.sh cervantes
 } && popd || exit
