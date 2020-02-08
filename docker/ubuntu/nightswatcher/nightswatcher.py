@@ -133,6 +133,7 @@ ota_zsync_models = frozenset([
                         'build_kindle', 'build_legacy_kindle',
                         'build_kindle5', 'build_kindlepw2',
                         'build_kobo', 'build_pocketbook',
+                        'build_remarkable',
                         'build_sony_prstux'])
 
 
