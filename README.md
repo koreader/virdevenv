@@ -14,7 +14,7 @@ cd koreader && ./kodev fetch-thirdparty
 You can even run the emulator directly from the Docker container provided you have a local X server, more details [here](http://fabiorehm.com/blog/2014/09/11/running-gui-apps-with-docker/). Some further possibilities (e.g., for Mac OS X and Windows) are explored [here](https://stackoverflow.com/questions/16296753/can-you-run-gui-applications-in-a-docker-container). NB The following command assumes KOReader is harmless and partially breaks the regular Docker container isolation.
 
 ```
-docker run -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v $(pwd)/koreader:/home/ko/koreader -it koreader/koappimage:0.1.5 bash -c "source ~/.bashrc && pushd koreader && ./kodev run"
+docker run -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v $(pwd)/koreader:/home/ko/koreader -it koreader/koappimage:latest bash -c "source ~/.bashrc && pushd koreader && ./kodev run"
 ```
 
 See the CI setup in the main and base repos, as well as the nightly builds on GitLab for further guidance.
