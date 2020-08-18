@@ -63,7 +63,7 @@ You can then enter the docker container in a separate, terminal (not within the 
 ```
 winpty docker exec -it vncko bash
 ```
-From here, you can edit the frontend code. When you want to see your changes reflected, you can **Restart KOReader**.
+From here, you can edit the frontend code. When you want to see your changes reflected, you can **Restart KOReader** from the emulator KOReader system menu.
 
 ### Notes
 * For some reason, if you close down the emulator after opening it then you lose keyboard focus in the xterm window
