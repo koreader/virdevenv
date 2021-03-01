@@ -10,13 +10,13 @@ ARM_SF_TC=(gcc-arm-linux-gnueabi g++-arm-linux-gnueabi)
 ARM_HF_TC=(gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf)
 ARM64_TC=(gcc-aarch64-linux-gnu g++-aarch64-linux-gnu)
 TC_BUILD_DEPS=(gperf help2man bison texinfo flex gawk libncurses5-dev)
-LIB32_GCC_DEV=(lib32gcc-5-dev libx32gcc1 libx32gomp1 libx32itm1
+LIB32_GCC_DEV=(lib32gcc-7-dev libx32gcc1 libx32gomp1 libx32itm1
     libx32atomic1 libx32asan0 libx32quadmath0 libc6-x32)
 # libtool-bin is due to a libzmq issue, see https://github.com/zeromq/libzmq/pull/1497
 # can be removed if libzmq is bumped
 MISC_TOOLS=(git subversion zip unzip vim wget p7zip-full bash-completion
     sudo libtool libtool-bin)
-LUAJIT_DEPS=("${LIB32_GCC_DEV[@]}" libc6-dev-amd64:i386)
+LUAJIT_DEPS=("${LIB32_GCC_DEV[@]}" )
 GLIB_DEPS="gettext"
 HARFBUZZ_DEPS="ragel"
 
@@ -28,7 +28,7 @@ echo " ------------------------------------------"
 apt-get install -y \
     "${MISC_TOOLS[@]}" \
     build-essential dpkg-dev pkg-config python3-pip \
-    gcc-5 cpp-5 g++-5 make automake cmake ccache \
+    gcc-7 cpp-7 g++-7 make automake cmake ccache \
     ninja-build \
     patch libtool nasm autoconf2.64 \
     "${TC_BUILD_DEPS[@]}" \
@@ -36,9 +36,6 @@ apt-get install -y \
     $HARFBUZZ_DEPS \
     "${ARM_SF_TC[@]}" "${ARM_HF_TC[@]}" "${ARM64_TC[@]}"\
     "${LUAJIT_DEPS[@]}"
-
-# --upgrade to prevent urllib3 errors
-pip3 install transifex-client --upgrade
 
 # compile custom xgettext with newline patch, cf. https://github.com/koreader/koreader/pull/5238#issuecomment-523794831
 # upstream bug https://savannah.gnu.org/bugs/index.php?56794
