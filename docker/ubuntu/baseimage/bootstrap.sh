@@ -29,6 +29,7 @@ apt-get install -y \
     "${MISC_TOOLS[@]}" \
     build-essential dpkg-dev pkg-config python3-pip \
     gcc-7 cpp-7 g++-7 make automake cmake ccache \
+    lua5.1 \
     ninja-build \
     patch libtool nasm autoconf2.64 \
     "${TC_BUILD_DEPS[@]}" \
