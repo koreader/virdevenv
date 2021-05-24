@@ -7,9 +7,9 @@ source "${CI_DIR}/common.sh"
 export PATH=$PWD/bin:$PATH
 
 #install our own updated shellcheck
-SC_VERSION="0.5.0"
+SC_VERSION="0.7.2"
 SC_VERSION_FULL="v${SC_VERSION}"
-SHELLCHECK_URL="https://storage.googleapis.com/shellcheck/shellcheck-${SC_VERSION_FULL}.linux.x86_64.tar.xz"
+SHELLCHECK_URL="https://github.com/koalaman/shellcheck/releases/download/${SC_VERSION_FULL}/shellcheck-${SC_VERSION_FULL}.linux.x86_64.tar.xz"
 if [[ "$(shellcheck --version)" != *"$SC_VERSION"* ]]; then
     wget "${SHELLCHECK_URL}"
     tar --xz -xvf shellcheck-"${SC_VERSION_FULL}".linux.x86_64.tar.xz
