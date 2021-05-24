@@ -1,4 +1,4 @@
-FROM koreader/kobase-python:0.1.5
+FROM koreader/kobase-python:0.2.0
 
 USER root
 RUN apt-get update && \
