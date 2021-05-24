@@ -29,7 +29,7 @@ apt-get install -y \
     patch libtool nasm autoconf2.64 \
     "${TC_BUILD_DEPS[@]}" \
     $GLIB_DEPS \
-    "${ARM_SF_TC[@]}" "${ARM_HF_TC[@]}" "{ARM64_TC[@]}" \
+    "${ARM_SF_TC[@]}" "${ARM_HF_TC[@]}" "${ARM64_TC[@]}" \
     "${LUAJIT_DEPS[@]}" \
     "${APPIMAGE_DEPS[@]}" \
     libffi-dev libsdl2-dev
