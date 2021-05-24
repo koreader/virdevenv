@@ -40,12 +40,10 @@ apt-get install -y \
 
 # compile custom xgettext with newline patch, cf. https://github.com/koreader/koreader/pull/5238#issuecomment-523794831
 # upstream bug https://savannah.gnu.org/bugs/index.php?56794
-GETTEXT_VER=0.20.1
+GETTEXT_VER=0.21
 wget http://ftpmirror.gnu.org/gettext/gettext-${GETTEXT_VER}.tar.gz
 tar -xf gettext-${GETTEXT_VER}.tar.gz
 pushd gettext-${GETTEXT_VER} && {
-    wget -O ignore-first-newline-of-lua-multiline-string.patch https://savannah.gnu.org/bugs/download.php?file_id=47379
-    patch -p1 <ignore-first-newline-of-lua-multiline-string.patch
     ./configure
     make -j"$(nproc)"
     make install
