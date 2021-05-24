@@ -3,7 +3,7 @@
 echo "Building toolchains for reMarkable..."
 git clone https://github.com/koreader/koxtoolchain.git
 pushd koxtoolchain && {
-    git checkout eb06c91c548bfac25d921da9dfd1160151e01077
+    git checkout ca4481e00fb8b6081c578c0241185444c7ca5ff3
 
     ./gen-tc.sh remarkable
 } && popd || exit
