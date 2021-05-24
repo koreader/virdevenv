@@ -5,6 +5,7 @@ set -e
 dpkg --add-architecture i386
 
 apt-get update
+apt-get upgrade -y
 
 ARM_SF_TC=(gcc-arm-linux-gnueabi g++-arm-linux-gnueabi)
 ARM_HF_TC=(gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf)
@@ -16,7 +17,7 @@ LIB32_GCC_DEV=(lib32gcc-7-dev libx32gcc1 libx32gomp1 libx32itm1
 # can be removed if libzmq is bumped
 MISC_TOOLS=(git subversion zip unzip vim wget p7zip-full bash-completion
     sudo libtool libtool-bin)
-LUAJIT_DEPS=("${LIB32_GCC_DEV[@]}" )
+LUAJIT_DEPS=("${LIB32_GCC_DEV[@]}")
 GLIB_DEPS="gettext"
 HARFBUZZ_DEPS="ragel"
 
@@ -35,7 +36,7 @@ apt-get install -y \
     "${TC_BUILD_DEPS[@]}" \
     $GLIB_DEPS \
     $HARFBUZZ_DEPS \
-    "${ARM_SF_TC[@]}" "${ARM_HF_TC[@]}" "${ARM64_TC[@]}"\
+    "${ARM_SF_TC[@]}" "${ARM_HF_TC[@]}" "${ARM64_TC[@]}" \
     "${LUAJIT_DEPS[@]}"
 
 # compile custom xgettext with newline patch, cf. https://github.com/koreader/koreader/pull/5238#issuecomment-523794831
