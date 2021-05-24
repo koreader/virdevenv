@@ -2,7 +2,7 @@
 
 echo "Pruning NDK to reduce image size..."
 NDK=android-ndk-r15c
-# only keep platform-14 (32bit ABIs) and platform-21 (64bit ABIs) 
+# only keep platform-14 (32bit ABIs) and platform-21 (64bit ABIs)
 rm -rf ${NDK}/platforms/android-{9,12,13,15,16,17,18,19,22,23,24,26}
 # remove obsolete android ABIs
 rm -rf ${NDK}/toolchains/{mips64el-linux-android-4.9,mipsel-linux-android-4.9}
