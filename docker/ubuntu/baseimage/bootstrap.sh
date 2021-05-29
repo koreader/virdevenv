@@ -7,9 +7,9 @@ dpkg --add-architecture i386
 apt-get update
 apt-get upgrade -y
 
-ARM_SF_TC=(gcc-8-arm-linux-gnueabi g++-8-arm-linux-gnueabi)
-ARM_HF_TC=(gcc-8-arm-linux-gnueabihf g++-8-arm-linux-gnueabihf)
-ARM64_TC=(gcc-8-aarch64-linux-gnu g++-8-aarch64-linux-gnu)
+ARM_SF_TC=(gcc-arm-linux-gnueabi g++-arm-linux-gnueabi)
+ARM_HF_TC=(gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf)
+ARM64_TC=(gcc-aarch64-linux-gnu g++-aarch64-linux-gnu)
 TC_BUILD_DEPS=(gperf help2man bison texinfo flex gawk libncurses5-dev)
 LIB32_GCC_DEV=(lib32gcc-8-dev libx32gcc1 libx32gomp1 libx32itm1
     libx32atomic1 libx32asan0 libx32quadmath0 libc6-x32
@@ -40,8 +40,8 @@ apt-get install --no-install-recommends -y \
     "${ARM_SF_TC[@]}" "${ARM_HF_TC[@]}" "${ARM64_TC[@]}" \
     "${LUAJIT_DEPS[@]}"
 
-sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 700 --slave /usr/bin/g++ g++ /usr/bin/g++-7
-sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 800 --slave /usr/bin/g++ g++ /usr/bin/g++-8
+update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 700 --slave /usr/bin/g++ g++ /usr/bin/g++-7
+update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 800 --slave /usr/bin/g++ g++ /usr/bin/g++-8
 
 # compile custom xgettext with newline patch, cf. https://github.com/koreader/koreader/pull/5238#issuecomment-523794831
 # upstream bug https://savannah.gnu.org/bugs/index.php?56794
