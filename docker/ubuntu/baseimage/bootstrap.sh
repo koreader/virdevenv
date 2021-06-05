@@ -31,6 +31,7 @@ apt-get install --no-install-recommends -y \
     "${MISC_TOOLS[@]}" \
     build-essential dpkg-dev pkg-config \
     gcc-8 cpp-8 g++-8 make automake cmake ccache \
+    fakeroot \
     lua5.1 \
     ninja-build \
     patch libtool nasm autoconf2.64 \
