@@ -46,7 +46,7 @@ artifact_re = re.compile(
     ('.*/koreader-'
      '(?P<platform>[a-z0-9\-]+)-'
      '(?:(?P<arch>arm|x86|i686|x86_64)-?.*-)?'
-     '(?P<version>v[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-(?P<commit_number>[0-9]+))?(?:-g(?P<commit_hash>[0-9a-z]{7})_(?P<commit_date>[0-9]{4}-[0-9]{2}-[0-9]{2})?)?)'
+     '(?P<version>v[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-(?P<commit_number>[0-9]+))?(?:-g(?P<commit_hash>[0-9a-z]{7,12})_(?P<commit_date>[0-9]{4}-[0-9]{2}-[0-9]{2})?)?)'
      '\.(?P<ftype>[A-Za-z]+).*'))
 
 def trigger_build():
@@ -99,6 +99,7 @@ def get_artifact_metadata(artifact_zip):
     commit_number = None
     artifact = {}
     for f in zf.namelist():
+        logger.info('Checking file in zip %s', f)
         m = artifact_re.match(f)
         if not m:
             continue
