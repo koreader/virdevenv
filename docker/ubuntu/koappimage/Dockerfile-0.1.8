@@ -1,0 +1,9 @@
+FROM koreader/koappimage:0.1.7
+
+USER root
+RUN apt-get update && \
+    apt-get upgrade -y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confnew  && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+USER ko

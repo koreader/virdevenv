@@ -1,0 +1,14 @@
+VERSION=0.1.8
+
+all: build
+
+build: Dockerfile
+	docker build -f Dockerfile-0.1.8 --rm=true -t $(USER)/koappimage:$(VERSION) .
+
+shell:
+	docker run --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(USER)/koappimage:$(VERSION) bash -l
+
+push:
+	docker push $(USER)/koappimage:$(VERSION)
+
+.PHONY: all clean test push shell
