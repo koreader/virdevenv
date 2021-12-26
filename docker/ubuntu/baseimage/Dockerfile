@@ -17,4 +17,4 @@ RUN chown ko:ko /home/ko/.bashrc
 USER ko
 WORKDIR /home/ko
 RUN ./install_lint.sh
-RUN ./install_luarocks.sh
+RUN ./install_luarocks.sh "/home/ko"
