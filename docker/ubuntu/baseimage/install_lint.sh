@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-HOME=/home/ko
+HOME="$1"
 
 cd $HOME || exit
 
@@ -11,12 +11,13 @@ export PATH=${HOME}/local/bin:$PATH
 #install our own updated shellcheck
 SHELLCHECK_VERSION="v0.7.2"
 SHELLCHECK_URL="https://github.com/koalaman/shellcheck/releases/download/${SHELLCHECK_VERSION?}/shellcheck-${SHELLCHECK_VERSION?}.linux.x86_64.tar.xz"
-if ! command -v shellcheck; then
+if [ "$(shellcheck --version)" != "v0.7.2" ]; then
     curl -sSL "${SHELLCHECK_URL}" | tar --exclude 'SHA256SUMS' --strip-components=1 -C "${HOME}/local/bin" -xJf -
     chmod +x "${HOME}/local/bin/shellcheck"
     shellcheck --version
 else
     echo -e "${ANSI_GREEN}Using system shellcheck."
+    shellcheck --version
 fi
 
 # install shfmt
