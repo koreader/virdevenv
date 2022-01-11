@@ -11,7 +11,9 @@ docker run -v $(pwd)/koreader:/home/ko/koreader -it koreader/koappimage:latest b
 cd koreader && ./kodev fetch-thirdparty
 ```
 
-You can even run the emulator directly from the Docker container provided you have a local X server, more details [here](http://fabiorehm.com/blog/2014/09/11/running-gui-apps-with-docker/). Some further possibilities (e.g., for Mac OS X and Windows) are explored [here](https://stackoverflow.com/questions/16296753/can-you-run-gui-applications-in-a-docker-container). NB The following command assumes KOReader is harmless and partially breaks the regular Docker container isolation.
+You can even run the emulator directly from the Docker container provided you have a local X server, more details [here](http://fabiorehm.com/blog/2014/09/11/running-gui-apps-with-docker/). Some further possibilities (e.g., for Mac OS X and Windows) are explored [here](https://stackoverflow.com/questions/16296753/can-you-run-gui-applications-in-a-docker-container).
+
+**NB The following command assumes KOReader is harmless and partially breaks the regular Docker container isolation. Forwarding X11 is here be dragons territory. Some people have reported segfaults in the emulator when using this method.** You have been warned.
 
 ```
 docker run -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v $(pwd)/koreader:/home/ko/koreader -it koreader/koappimage:latest bash -c "source ~/.bashrc && pushd koreader && ./kodev run"
