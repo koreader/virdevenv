@@ -30,7 +30,7 @@ echo " ------------------------------------------"
 apt-get install --no-install-recommends -y \
     "${MISC_TOOLS[@]}" \
     build-essential dpkg-dev pkg-config \
-    gcc-8 cpp-8 g++-8 make automake cmake ccache \
+    gcc-8 cpp-8 g++-8 make automake ccache \
     fakeroot \
     lua5.1 \
     ninja-build \
@@ -57,3 +57,13 @@ pushd gettext-${GETTEXT_VER} && {
 } && popd
 rm gettext-${GETTEXT_VER}.tar.gz
 rm -rf gettext-${GETTEXT_VER}
+
+# Install CMake
+CMAKE_VERSION=3.16
+CMAKE_VERSION_FULL=3.16.9
+pushd /tmp && {
+    wget https://cmake.org/files/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION_FULL}-Linux-x86_64.sh
+    mkdir /opt/cmake
+    sh cmake-${CMAKE_VERSION_FULL}-Linux-x86_64.sh --prefix=/opt/cmake --skip-license
+    ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
+} && popd
