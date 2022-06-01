@@ -1,4 +1,4 @@
-FROM koreader/kobase:0.2.2
+FROM koreader/kobase:0.3.0
 
 USER ko
 
