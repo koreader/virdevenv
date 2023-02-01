@@ -45,7 +45,7 @@ STABLE_BUILD_DIR = BUILD_DIR + 'stable'
 artifact_re = re.compile(
     ('.*/koreader-'
      '(?P<platform>[a-z0-9\-]+)-'
-     '(?:(?P<arch>arm|x86|i686|x86_64)-?.*-)?'
+     '(?:(?P<arch>arm|aarch64|x86|i686|x86_64)-?.*-)?'
      '(?P<version>v[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-(?P<commit_number>[0-9]+))?(?:-g(?P<commit_hash>[0-9a-z]{7,12})_(?P<commit_date>[0-9]{4}-[0-9]{2}-[0-9]{2})?)?)'
      '\.(?P<ftype>[A-Za-z]+).*'))
 
@@ -120,6 +120,7 @@ def is_stable(commit_number):
 
 download_artifact_ext_map = {
     'build_android': 'apk',
+    'build_android_aarch64': 'apk',
     'build_android_x86': 'apk',
     'build_appimage': 'AppImage',
     'build_ubuntutouch': 'click',
@@ -127,7 +128,7 @@ download_artifact_ext_map = {
 
 # names come from GitLab, see https://gitlab.com/koreader/nightly-builds/blob/master/.gitlab-ci.yml
 ota_link_models = frozenset([
-                        'build_android', 'build_android_x86',
+                        'build_android', 'build_android_aarch64', 'build_android_x86',
                         'build_appimage'])
 ota_zsync_models = frozenset([
                         'build_cervantes',
