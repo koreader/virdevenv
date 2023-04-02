@@ -3,12 +3,12 @@ VERSION=0.3.0
 all: build
 
 build: Dockerfile
-	docker build --rm=true -t $(USER)/koappimage:$(VERSION) .
+	docker build --rm=true -t $(REGISTRY)$(USER)/koappimage:$(VERSION) .
 
 shell:
-	docker run --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(USER)/koappimage:$(VERSION) bash -l
+	docker run --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(REGISTRY)$(USER)/koappimage:$(VERSION) bash -l
 
 push:
-	docker push $(USER)/koappimage:$(VERSION)
+	docker push $(REGISTRY)$(USER)/koappimage:$(VERSION)
 
 .PHONY: all clean test push shell
