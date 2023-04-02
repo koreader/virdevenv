@@ -7,7 +7,7 @@ COPY clang14.list /etc/apt/sources.list.d/clang14.list
 RUN apt-get remove gcc gcc-9 gcc-10 -y \
     && wget --progress=dot:giga -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - \
     && apt-get update \
-    && apt-get install -y --no-install-recommends clang-14 \
+    && apt-get install -y --no-install-recommends libtool-bin clang-14 \
     && update-alternatives --install /usr/bin/clang clang /usr/bin/clang-14 380 \
     && update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-14 380 \
     && update-alternatives --install /usr/bin/clang-cpp clang-cpp /usr/bin/clang-cpp-14 380 \
