@@ -1,4 +1,5 @@
-FROM phusion/baseimage:focal-1.2.0
+ARG REGISTRY=docker.io
+FROM $REGISTRY/phusion/baseimage:focal-1.2.0
 
 COPY ./bootstrap.sh /bootstrap.sh
 RUN /bootstrap.sh && \

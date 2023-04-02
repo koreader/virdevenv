@@ -1,4 +1,5 @@
-FROM phusion/baseimage:bionic-1.0.0
+ARG REGISTRY=docker.io
+FROM $REGISTRY/phusion/baseimage:bionic-1.0.0
 
 COPY ./bootstrap.sh /bootstrap.sh
 RUN /bootstrap.sh && \
