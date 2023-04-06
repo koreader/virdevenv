@@ -1,4 +1,5 @@
-FROM koreader/kobase:0.3.0
+ARG REGISTRY=docker.io
+FROM $REGISTRY/koreader/kobase:0.3.0
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 

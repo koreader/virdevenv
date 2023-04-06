@@ -1,4 +1,5 @@
-FROM koreader/kobase-18.04:0.3.0
+ARG REGISTRY=docker.io
+FROM $REGISTRY/koreader/kobase-18.04:0.3.0
 
 USER root
 RUN apt-get update && \

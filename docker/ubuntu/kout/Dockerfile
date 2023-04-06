@@ -1,4 +1,5 @@
-FROM koreader/kobase:0.2.0
+ARG REGISTRY=docker.io
+FROM $REGISTRY/koreader/kobase:0.2.0
 
 USER root
 RUN add-apt-repository ppa:bhdouglass/clickable \
