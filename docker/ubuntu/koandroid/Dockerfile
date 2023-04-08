@@ -1,9 +1,9 @@
 ARG REGISTRY=docker.io
-FROM $REGISTRY/koreader/kobase-18.04:0.3.0
+FROM $REGISTRY/koreader/kobase-22.04:0.3.0
 
 USER root
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends openjdk-8-jdk && \
+    apt-get install -y --no-install-recommends openjdk-8-jdk python-is-python3 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
