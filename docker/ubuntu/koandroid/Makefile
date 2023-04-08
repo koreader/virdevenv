@@ -1,4 +1,4 @@
-VERSION=0.6.0
+VERSION=0.5.3
 REGISTRY?=docker.io
 
 all: build
