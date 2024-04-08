@@ -1,9 +1,9 @@
-VERSION=0.3.0
+VERSION=0.3.1
 REGISTRY?=docker.io
 
 all: build
 
-build: Dockerfile bootstrap.sh
+build:
 	docker build --build-arg REGISTRY=$(REGISTRY) --rm=true -t $(REGISTRY)/$(USER)/kobase:$(VERSION) .
 
 shell:
