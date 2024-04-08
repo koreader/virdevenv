@@ -1,8 +1,9 @@
 ARG REGISTRY=docker.io
-FROM $REGISTRY/koreader/kobase-18.04:0.3.0
+FROM $REGISTRY/koreader/kobase:0.3.1
 
 USER ko
 
 WORKDIR /home/ko
-COPY ./build_kobo_tc.sh /home/ko/build_kobo_tc.sh
-RUN ./build_kobo_tc.sh
+COPY ./scripts/install_x-tools.sh .
+ARG X_TOOLS_VERSION
+RUN ./install_x-tools.sh kobo $X_TOOLS_VERSION
