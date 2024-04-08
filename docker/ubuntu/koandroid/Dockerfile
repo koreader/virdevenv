@@ -1,13 +1,10 @@
 ARG REGISTRY=docker.io
-FROM scratch AS base
+FROM $REGISTRY/koreader/kobase:0.3.1-20.04 AS base
 
-FROM $REGISTRY/koreader/kobase-18.04:0.3.0 AS build
-
-USER ko
-WORKDIR /home/ko
+FROM base AS build
 
 RUN sudo apt-get -qq update
-RUN wget https://raw.githubusercontent.com/koreader/koreader-base/e77e2e6d9fa6b9c8aa50a25b59c6739315fafeb8/toolchain/Makefile
+RUN wget https://github.com/koreader/koreader-base/raw/42504399d5c7e18adb5558f26e510a74c945b5fd/toolchain/Makefile
 
 # Install NDK.
 ARG NDK NDK_SUM
@@ -28,9 +25,6 @@ RUN sudo rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 FROM base
 COPY --from=build / /
 
-USER ko
-WORKDIR /home/ko
-
 # Setup shell environment.
 ARG JDK NDK
 RUN echo >>.bashrc "export JAVA_HOME='/usr/lib/jvm/java-$JDK-openjdk-amd64'"
@@ -40,6 +34,3 @@ RUN echo >>.bashrc "export PATH=\"\$ANDROID_HOME/tools:\$PATH\""
 RUN echo >>.bashrc "export PATH=\"\$ANDROID_HOME/tools/bin:\$PATH\""
 RUN echo >>.bashrc "export PATH=\"\$ANDROID_HOME/build-tools/30.0.2:\$PATH\""
 RUN echo >>.bashrc "export PATH=\"\$ANDROID_NDK_HOME:\$PATH\""
-
-CMD ["bash", "-i"]
-ENTRYPOINT ["bash", "-leo", "pipefail", "-c", "\"$@\"", "--"]
