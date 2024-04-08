@@ -1,8 +1,8 @@
 ARG REGISTRY=docker.io
-FROM $REGISTRY/koreader/kobase-18.04:0.3.0
+FROM $REGISTRY/koreader/kobase:0.3.1-20.04
 
-USER ko
-
-WORKDIR /home/ko
-COPY ./build_kindle_tc.sh /home/ko/build_kindle_tc.sh
-RUN ./build_kindle_tc.sh
+COPY ./scripts/install_x-tools.sh .
+ARG X_TOOLS_VERSION
+RUN ./install_x-tools.sh kindle $X_TOOLS_VERSION
+RUN ./install_x-tools.sh kindle5 $X_TOOLS_VERSION
+RUN ./install_x-tools.sh kindlepw2 $X_TOOLS_VERSION
