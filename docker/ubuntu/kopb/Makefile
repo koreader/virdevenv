@@ -1,10 +1,14 @@
-VERSION=0.3.3
+VERSION=0.4.0
 REGISTRY?=docker.io
+X_TOOLS_VERSION=2021.12
 
 all: build
 
 build: Dockerfile
-	docker build --build-arg REGISTRY=$(REGISTRY) --rm=true -t $(REGISTRY)/$(USER)/kopb:$(VERSION) .
+	docker build \
+		--build-arg REGISTRY=$(REGISTRY) \
+		--build-arg X_TOOLS_VERSION=$(X_TOOLS_VERSION) \
+		--rm=true -t $(REGISTRY)/$(USER)/kopb:$(VERSION) --file=Dockerfile ..
 
 shell:
 	docker run --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(REGISTRY)/$(USER)/kopb:$(VERSION) bash -l
