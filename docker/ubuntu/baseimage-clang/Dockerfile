@@ -1,7 +1,7 @@
 ARG REGISTRY=docker.io
-FROM scratch AS base
+FROM $REGISTRY/koreader/kobase:0.3.1-20.04 as base
 
-FROM $REGISTRY/koreader/kobase:0.3.1-20.04 as build
+FROM base AS build
 
 USER root
 
@@ -22,4 +22,5 @@ RUN apt-get remove --auto-remove gcc gcc-9 gcc-10 -y
 RUN apt-get clean
 RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-USER ko
+FROM base
+COPY --from=build / /
