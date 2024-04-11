@@ -11,3 +11,5 @@ RUN sudo rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 FROM base
 COPY --from=build / /
+USER ko
+WORKDIR /home/ko
