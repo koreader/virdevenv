@@ -4,7 +4,6 @@
 from gevent import monkey
 from gevent import queue
 monkey.patch_all()  # NOQA
-from streql import equals
 import gevent
 import falcon
 import ujson
@@ -259,7 +258,7 @@ def fetch_build_worker():
 class PipeLine():
     def on_post(self, req, resp):
         token = req.headers.get('X-GITLAB-TOKEN')
-        if not token or not equals(token, GITLAB_TOKEN):
+        if not token or not token == GITLAB_TOKEN:
             raise falcon.HTTPBadRequest('Yoyo', '')
 
         try:
