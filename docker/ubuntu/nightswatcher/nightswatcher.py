@@ -219,7 +219,7 @@ def extract_build(artifact_zip, build):
 
         shutil.move(tmp_targz_path, OTA_DIR)
         run_cmd(['zsyncmake', OTA_DIR + artifact['targz'],
-                 '-u', artifact['targz'], '-o', zsync_file])
+                 '-C', '-u', artifact['targz'], '-o', zsync_file])
 
         if stable is True:
             shutil.copy2(zsync_file, zsync_file_nightly)
