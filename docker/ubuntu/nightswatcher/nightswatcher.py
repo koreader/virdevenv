@@ -63,7 +63,8 @@ def trigger_build():
         gevent.sleep(wait_time)
         re = requests.post(trigger_url,
                            data={'token': GITLAB_TRIGGER_TOKEN,
-                                 'ref': 'master'})
+                                 'ref': 'master'},
+                           timeout=10)
         logger.info('New nightly build triggered: %s', re.status_code)
         gevent.sleep(1)
 
@@ -195,9 +196,8 @@ def extract_build(artifact_zip, build):
 
         os.symlink(download_artifact_path, OTA_DIR + download_artifact)
 
-        f = open(link_file, "w")
-        f.write(download_artifact)
-        f.close()
+        with open(link_file, "w", encoding="utf-8") as f:
+            f.write(download_artifact)
 
         if stable is True:
             if os.path.exists(link_file_nightly):
