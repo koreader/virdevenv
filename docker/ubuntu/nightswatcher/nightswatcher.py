@@ -6,6 +6,7 @@ from gevent import queue
 monkey.patch_all()  # NOQA
 import gevent
 import falcon
+import hmac
 import ujson
 import os
 import logging
@@ -258,7 +259,7 @@ def fetch_build_worker():
 class PipeLine():
     def on_post(self, req, resp):
         token = req.headers.get('X-GITLAB-TOKEN')
-        if not token or not token == GITLAB_TOKEN:
+        if not token or not hmac.compare_digest(token, GITLAB_TOKEN):
             raise falcon.HTTPBadRequest('Yoyo', '')
 
         try:
