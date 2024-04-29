@@ -5,11 +5,8 @@ HOME=/home/ko
 # shellcheck source=/dev/null
 . /etc/bash_completion
 
-export PATH=$HOME/local/bin:$PATH
-if [ -f ${HOME}/local/bin/luarocks ]; then
-    # add local rocks to $PATH
-    eval "$(luarocks path --bin)"
-fi
+# add local rocks to $PATH
+eval "$(luarocks path)"
 
 XTOOLS=${HOME}/x-tools
 

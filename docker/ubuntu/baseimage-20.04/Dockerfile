@@ -21,7 +21,6 @@ RUN apt-get install --no-install-recommends -y \
     build-essential dpkg-dev pkg-config \
     gcc-10 cpp-10 g++-10 make automake cmake ccache \
     fakeroot \
-    lua5.1 \
     ninja-build \
     patch libtool nasm autoconf2.64 \
     $MISC_TOOLS
@@ -88,41 +87,71 @@ RUN chmod +x local/bin/shfmt
 
 # }}}
 
+# LUAJIT. {{{
+
+ARG LUAJIT_VERSION=2.1.0-beta3
+RUN git clone --branch v${LUAJIT_VERSION} --depth 1 https://github.com/LuaJIT/LuaJIT.git luajit
+WORKDIR luajit
+RUN make -j"$(nproc)" amalg
+RUN sudo make install
+RUN test -x /usr/local/bin/luajit || sudo ln -sv luajit-${LUAJIT_VERSION} /usr/local/bin/luajit
+RUN luajit -v
+WORKDIR ..
+RUN rm -rf luajit
+
+# }}}
+
 # LUAROCKS. {{{
 
-RUN git clone https://github.com/torch/luajit-rocks.git
-WORKDIR luajit-rocks
-RUN git checkout 2c7496b905f6f972673effda4884766433b7583b
-RUN echo $HOME
-RUN cmake . -DWITH_LUAJIT21=ON -DCMAKE_INSTALL_PREFIX="$HOME/local"
-RUN make install
+# Install luarocks.
+ARG LUAROCKS_VERSION=3.11.0
+RUN wget https://luarocks.github.io/luarocks/releases/luarocks-${LUAROCKS_VERSION}.tar.gz
+RUN tar xvf luarocks-${LUAROCKS_VERSION}.tar.gz
+WORKDIR luarocks-${LUAROCKS_VERSION}
+RUN ./configure
+RUN make
+RUN sudo make install
 WORKDIR ..
-RUN rm -rf luajit-rocks
-
-COPY --chown=ko <<EOF .luarocks/config.lua
+RUN rm -rf luarocks-${LUAROCKS_VERSION}*
+# Configure.
+RUN mkdir -p ~/.luarocks
+RUN tee -a ~/.luarocks/config-5.1.lua <<EOF
+local_by_default = true
 wrap_bin_scripts = false
 EOF
-RUN luarocks --local install luafilesystem
-RUN luarocks --local install ansicolors
-RUN luarocks --local install busted 2.0.0-1
-RUN luarocks --local install luacov
+
+# lfs
+RUN luarocks install luafilesystem
+
+# busted
+RUN luarocks install ansicolors
+RUN luarocks install busted
 
 # luasec.
 RUN sudo apt-get install -y --no-install-recommends libssl-dev
 # luasec doesn't automatically detect 64-bit libs
-RUN luarocks --local install luasec OPENSSL_LIBDIR=/usr/lib/x86_64-linux-gnu
+RUN luarocks install luasec OPENSSL_LIBDIR=/usr/lib/x86_64-linux-gnu
 RUN sudo apt-get remove -y --auto-remove libssl-dev
 
-RUN luarocks --local install luacheck
-RUN luarocks --local install lanes # for parallel luacheck
-RUN luarocks --local install ldoc
+# luacheck
+RUN luarocks install luacheck
+RUN eval "$(luarocks path)" && sed -i 's/ lua$/ luajit/' $(which luacheck)
 
-# luacov-coveralls
+# lanes (for parallel luacheck)
+RUN luarocks install lanes
+# Ensure lanes module is detected by luacheck.
+RUN eval "$(luarocks path)" && luacheck --version | grep "^LuaLanes: ${LANES_VERSION}"
+
+# ldoc
+RUN luarocks install ldoc
+
+# luacov
+RUN luarocks install luacov
 RUN wget https://github.com/moteus/luacov-coveralls/archive/refs/heads/master.zip
 RUN unzip master.zip
 RUN rm master.zip
 WORKDIR luacov-coveralls-master
-RUN luarocks --local make rockspecs/luacov-coveralls-scm-0.rockspec
+RUN luarocks make rockspecs/luacov-coveralls-scm-0.rockspec
 WORKDIR ..
 RUN rm -rf luacov-coveralls-master
 
