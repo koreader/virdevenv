@@ -19,6 +19,7 @@ ARG SDK SDK_SUM
 RUN make SDK_SUM="$SDK_SUM" SDK_TARBALL="commandlinetools-linux-$SDK.zip" android-sdk
 
 # Cleanup.
+RUN rm -vrf ~/.android/cache
 RUN sudo apt-get clean
 RUN sudo rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
