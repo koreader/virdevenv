@@ -14,6 +14,8 @@ for tc in "${XTOOLS}"/*/bin; do
     export PATH=$tc:$PATH
 done
 
+export PATH="${HOME}/.local/bin:${PATH}"
+
 alias ls='ls --color=auto'
 alias rm='rm -i'
 alias cp='cp -i'
