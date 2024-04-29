@@ -1,7 +1,7 @@
 ARG REGISTRY=docker.io
-FROM $REGISTRY/koreader/kobase:0.3.2-20.04 as base
+FROM scratch as base
 
-FROM base AS build
+FROM $REGISTRY/koreader/kobase:0.3.2-20.04 AS build
 
 USER root
 
@@ -32,3 +32,5 @@ RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 FROM base
 COPY --from=build / /
+USER ko
+WORKDIR /home/ko
