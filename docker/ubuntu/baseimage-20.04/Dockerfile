@@ -160,6 +160,7 @@ RUN rm -rf luacov-coveralls-master
 # }}}
 
 # Cleanup.
+RUN rm -vrf ~/.cache
 RUN sudo apt-get clean
 RUN sudo rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
