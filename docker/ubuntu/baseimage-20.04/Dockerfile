@@ -7,9 +7,6 @@ FROM $REGISTRY/ubuntu:focal AS build
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-# for linux-libc-dev:i386, which is needed by LuaJIT
-RUN dpkg --add-architecture i386
-
 RUN apt-get update
 RUN apt-get upgrade -y
 
@@ -22,21 +19,11 @@ ARG MISC_TOOLS="git zip unzip neovim wget p7zip-full bash-completion \
     "
 RUN apt-get install --no-install-recommends -y \
     build-essential dpkg-dev pkg-config \
-    gcc-10 cpp-10 g++-10 make automake cmake ccache \
+    gcc cpp g++ make automake cmake ccache \
     fakeroot \
     ninja-build \
     patch libtool nasm autoconf2.64 \
     $MISC_TOOLS
-RUN apt-get remove --auto-remove -y gcc-9
-RUN sudo update-alternatives \
-    --install /usr/bin/gcc gcc /usr/bin/gcc-10 800 \
-    --slave /usr/bin/cc cc /usr/bin/gcc-10 \
-    --slave /usr/bin/c++ c++ /usr/bin/g++-10 \
-    --slave /usr/bin/g++ g++ /usr/bin/g++-10 \
-    --slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-10 \
-    --slave /usr/bin/gcc-nm gcc-nm /usr/bin/gcc-nm-10 \
-    --slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-10 \
-    ;
 
 # compile custom xgettext with newline patch, cf. https://github.com/koreader/koreader/pull/5238#issuecomment-523794831
 # upstream bug https://savannah.gnu.org/bugs/index.php?56794
@@ -51,11 +38,7 @@ WORKDIR ..
 RUN rm -rf gettext-${GETTEXT_VER}*
 
 # Extra dependencies.
-ARG LIB32_GCC_DEV="lib32gcc-10-dev libx32gcc1 libx32gomp1 libx32itm1 \
-    libx32atomic1 libx32asan5 libx32quadmath0 libc6-x32 \
-    libc6-dev:i386 \
-    "
-ARG LUAJIT_DEPS="$LIB32_GCC_DEV"
+ARG LUAJIT_DEPS="gcc-multilib"
 # NOTE: SDL2 is also needed for the tests.
 ARG APPIMAGE_DEPS="libsdl2-2.0-0"
 RUN apt-get install --no-install-recommends -y \
