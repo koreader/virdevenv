@@ -78,12 +78,14 @@ ENV PATH=/home/ko/local/bin:$PATH
 
 ARG SHELLCHECK_VERSION="v0.8.0"
 ARG SHELLCHECK_URL="https://github.com/koalaman/shellcheck/releases/download/$SHELLCHECK_VERSION/shellcheck-$SHELLCHECK_VERSION.linux.x86_64.tar.xz"
-RUN curl -sSL "$SHELLCHECK_URL" | tar --strip-components=1 -C local/bin -xJf - --no-anchored shellcheck
-RUN chmod +x local/bin/shellcheck
+RUN curl -sSL "$SHELLCHECK_URL" | tar --strip-components=1 -xJf - --no-anchored shellcheck
+RUN sudo install -m 755 shellcheck /usr/local/bin
+RUN rm shellcheck
 
 ARG SHFMT_URL="https://github.com/mvdan/sh/releases/download/v3.4.3/shfmt_v3.4.3_linux_amd64"
-RUN curl -sSL "$SHFMT_URL" -o local/bin/shfmt
-RUN chmod +x local/bin/shfmt
+RUN curl -sSL "$SHFMT_URL" -o shfmt
+RUN sudo install -m 755 shfmt /usr/local/bin
+RUN rm shfmt
 
 # }}}
 
