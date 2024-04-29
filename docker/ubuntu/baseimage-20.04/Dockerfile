@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1
 ARG REGISTRY=docker.io
 FROM scratch AS base
 
