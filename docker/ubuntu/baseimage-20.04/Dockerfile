@@ -1,9 +1,11 @@
 ARG REGISTRY=docker.io
 FROM scratch AS base
 
-FROM $REGISTRY/phusion/baseimage:focal-1.2.0 AS build
+FROM $REGISTRY/ubuntu:focal AS build
 
 # BOOTSTRAP {{{
+
+ARG DEBIAN_FRONTEND=noninteractive
 
 # for linux-libc-dev:i386, which is needed by LuaJIT
 RUN dpkg --add-architecture i386
@@ -16,6 +18,7 @@ RUN apt-get upgrade -y
 # can be removed if libzmq is bumped
 ARG MISC_TOOLS="git zip unzip neovim wget p7zip-full bash-completion \
     sudo libtool libtool-bin hardlink \
+    ca-certificates curl diffstat less openssh-client \
     "
 RUN apt-get install --no-install-recommends -y \
     build-essential dpkg-dev pkg-config \
@@ -24,7 +27,7 @@ RUN apt-get install --no-install-recommends -y \
     ninja-build \
     patch libtool nasm autoconf2.64 \
     $MISC_TOOLS
-RUN apt-get remove --auto-remove -y gcc-9 vim-tiny
+RUN apt-get remove --auto-remove -y gcc-9
 RUN sudo update-alternatives \
     --install /usr/bin/gcc gcc /usr/bin/gcc-10 800 \
     --slave /usr/bin/cc cc /usr/bin/gcc-10 \
