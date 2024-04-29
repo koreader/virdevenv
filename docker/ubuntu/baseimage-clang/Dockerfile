@@ -1,9 +1,12 @@
 ARG REGISTRY=docker.io
-FROM $REGISTRY/koreader/kobase:0.3.1-20.04 as base
+FROM $REGISTRY/koreader/kobase:0.3.2-20.04 as base
 
 FROM base AS build
 
 USER root
+
+RUN apt-get update -y
+RUN apt-get install -y gnupg
 
 # Install Clang.
 # NOTE: our glib version must be updated before we can switch to clang >= 15.
@@ -21,7 +24,7 @@ RUN update-alternatives --install /usr/bin/clang-cpp clang-cpp /usr/bin/clang-cp
 RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/clang-${CLANG_VERSION} 380
 
 # Remove GCC.
-RUN apt-get remove --auto-remove gcc gcc-9 gcc-10 -y
+RUN apt-get remove --auto-remove gcc -y
 
 # Cleanup.
 RUN apt-get clean
