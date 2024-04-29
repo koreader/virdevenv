@@ -33,14 +33,12 @@ RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 800 --slave /
 ARG GETTEXT_VER=0.21
 RUN wget http://ftpmirror.gnu.org/gettext/gettext-${GETTEXT_VER}.tar.gz
 RUN tar -xf gettext-${GETTEXT_VER}.tar.gz
-RUN rm gettext-${GETTEXT_VER}.tar.gz
 WORKDIR gettext-${GETTEXT_VER}
-RUN ./configure
+RUN ./configure --disable-dependency-tracking --disable-shared --disable-static
 RUN make -j"$(nproc)"
-RUN make install
-RUN ldconfig
+RUN make -C gettext-tools/src/ install-strip
 WORKDIR ..
-RUN rm -rf gettext-${GETTEXT_VER}
+RUN rm -rf gettext-${GETTEXT_VER}*
 
 # Extra dependencies.
 ARG TC_BUILD_DEPS="gperf help2man bison texinfo flex gawk libncurses5-dev"
