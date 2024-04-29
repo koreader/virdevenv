@@ -53,10 +53,12 @@ ARG LIB32_GCC_DEV="lib32gcc-10-dev libx32gcc1 libx32gomp1 libx32itm1 \
     libc6-dev:i386 \
     "
 ARG LUAJIT_DEPS="$LIB32_GCC_DEV"
-ARG APPIMAGE_DEPS="libsdl2-2.0-0 libx11-dev"
+# NOTE: SDL2 is also needed for the tests.
+ARG APPIMAGE_DEPS="libsdl2-2.0-0"
 RUN apt-get install --no-install-recommends -y \
     $LUAJIT_DEPS \
-    $APPIMAGE_DEPS
+    $APPIMAGE_DEPS \
+    ;
 
 # }}}
 
