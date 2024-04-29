@@ -1,5 +1,5 @@
 ARG REGISTRY=docker.io
-FROM $REGISTRY/koreader/kobase:0.3.1-20.04 AS base
+FROM $REGISTRY/koreader/kobase:0.3.2-20.04 AS base
 
 FROM base AS build
 
