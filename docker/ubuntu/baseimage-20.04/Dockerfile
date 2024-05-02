@@ -139,6 +139,7 @@ ARG MISC_TOOLS="\
     autoconf2.64 \
     automake \
     ccache \
+    chrpath \
     cmake \
     curl \
     diffstat \
