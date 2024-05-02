@@ -10,47 +10,18 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update
 RUN apt-get upgrade -y
 
-# Base development tools.
-# libtool-bin is due to a libzmq issue, see https://github.com/zeromq/libzmq/pull/1497
-# can be removed if libzmq is bumped
-ARG MISC_TOOLS="git zip unzip neovim wget p7zip-full bash-completion \
-    sudo libtool libtool-bin hardlink \
-    ca-certificates curl diffstat less openssh-client \
-    "
+# Bare minimum for installing gettext, our LUA
+# environment, and setting up a dedicated user.
 RUN apt-get install --no-install-recommends -y \
-    build-essential dpkg-dev pkg-config \
-    gcc cpp g++ make automake cmake ccache \
-    fakeroot \
-    ninja-build \
-    patch libtool nasm autoconf2.64 \
-    $MISC_TOOLS
-
-# compile custom xgettext with newline patch, cf. https://github.com/koreader/koreader/pull/5238#issuecomment-523794831
-# upstream bug https://savannah.gnu.org/bugs/index.php?56794
-ARG GETTEXT_VER=0.21
-RUN wget http://ftpmirror.gnu.org/gettext/gettext-${GETTEXT_VER}.tar.gz
-RUN tar -xf gettext-${GETTEXT_VER}.tar.gz
-WORKDIR gettext-${GETTEXT_VER}
-RUN ./configure --disable-dependency-tracking --disable-shared --disable-static
-RUN make -j"$(nproc)"
-RUN make -C gettext-tools/src/ install-strip
-WORKDIR ..
-RUN rm -rf gettext-${GETTEXT_VER}*
-
-# Extra dependencies.
-ARG LUAJIT_DEPS="gcc-multilib"
-# NOTE: SDL2 is also needed for the tests.
-ARG APPIMAGE_DEPS="libsdl2-2.0-0"
-RUN apt-get install --no-install-recommends -y \
-    $LUAJIT_DEPS \
-    $APPIMAGE_DEPS \
+    bash-completion \
+    build-essential \
+    ca-certificates \
+    git \
+    less \
+    neovim \
+    sudo \
+    wget \
     ;
-
-# }}}
-
-# Create a symlink to prevent trouble finding the library in CI.
-# TODO Make this more dependable in base.
-RUN ln -sf /usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0 /usr/lib/x86_64-linux-gnu/libSDL2.so
 
 # Add dedicated user.
 RUN useradd -m ko -s /bin/bash
@@ -62,16 +33,28 @@ USER ko
 RUN mkdir -p local/bin
 ENV PATH=/home/ko/local/bin:$PATH
 
+# compile custom xgettext with newline patch, cf. https://github.com/koreader/koreader/pull/5238#issuecomment-523794831
+# upstream bug https://savannah.gnu.org/bugs/index.php?56794
+ARG GETTEXT_VER=0.21
+RUN wget http://ftpmirror.gnu.org/gettext/gettext-${GETTEXT_VER}.tar.gz
+RUN tar -xf gettext-${GETTEXT_VER}.tar.gz
+WORKDIR gettext-${GETTEXT_VER}
+RUN ./configure --disable-dependency-tracking --disable-shared --disable-static
+RUN make -j"$(nproc)"
+RUN sudo make -C gettext-tools/src/ install-strip
+WORKDIR ..
+RUN rm -rf gettext-${GETTEXT_VER}*
+
 # LINTERS. {{{
 
 ARG SHELLCHECK_VERSION="v0.8.0"
 ARG SHELLCHECK_URL="https://github.com/koalaman/shellcheck/releases/download/$SHELLCHECK_VERSION/shellcheck-$SHELLCHECK_VERSION.linux.x86_64.tar.xz"
-RUN curl -sSL "$SHELLCHECK_URL" | tar --strip-components=1 -xJf - --no-anchored shellcheck
+RUN wget -O - "$SHELLCHECK_URL" | tar --strip-components=1 -xJf - --no-anchored shellcheck
 RUN sudo install -m 755 shellcheck /usr/local/bin
 RUN rm shellcheck
 
 ARG SHFMT_URL="https://github.com/mvdan/sh/releases/download/v3.4.3/shfmt_v3.4.3_linux_amd64"
-RUN curl -sSL "$SHFMT_URL" -o shfmt
+RUN wget -O shfmt "$SHFMT_URL"
 RUN sudo install -m 755 shfmt /usr/local/bin
 RUN rm shfmt
 
@@ -90,6 +73,8 @@ WORKDIR ..
 RUN rm -rf luajit
 
 # }}}
+
+RUN sudo apt-get install --no-install-recommends -y unzip
 
 # LUAROCKS. {{{
 
@@ -147,6 +132,45 @@ RUN rm -rf luacov-coveralls-master
 
 # }}}
 
+# Other development dependencies / tools.
+# NOTE: libtool-bin is due to a libzmq issue, see https://github.com/zeromq/libzmq/pull/1497
+# (can be removed if libzmq is bumped or the build switched from autotools to cmake).
+ARG MISC_TOOLS="\
+    autoconf2.64 \
+    automake \
+    ccache \
+    cmake \
+    curl \
+    diffstat \
+    dpkg-dev \
+    fakeroot \
+    hardlink \
+    libtool \
+    libtool-bin \
+    nasm \
+    ninja-build \
+    openssh-client \
+    p7zip-full \
+    patch \
+    pkg-config \
+    unzip \
+    zip \
+    "
+# Extra dependencies.
+ARG LUAJIT_DEPS="gcc-multilib"
+# NOTE: SDL2 is also needed for the tests.
+ARG APPIMAGE_DEPS="libsdl2-2.0-0"
+RUN sudo --preserve-env=DEBIAN_FRONTEND apt-get install --no-install-recommends -y \
+    $LUAJIT_DEPS \
+    $APPIMAGE_DEPS \
+    $MISC_TOOLS \
+    ;
+# Create a symlink to prevent trouble finding the library in CI.
+# TODO: make this more dependable in base.
+RUN sudo ln -sf /usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0 /usr/lib/x86_64-linux-gnu/libSDL2.so
+
+# }}}
+
 # Cleanup.
 RUN rm -vrf ~/.cache
 RUN sudo apt-get clean
@@ -157,3 +181,5 @@ FROM base
 COPY --from=build / /
 USER ko
 WORKDIR /home/ko
+
+# vim: sw=4
