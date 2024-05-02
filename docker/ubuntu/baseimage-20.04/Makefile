@@ -1,15 +1,16 @@
-VERSION=0.3.2-20.04
-REGISTRY?=docker.io
+IMAGE = kobase
+VERSION = 0.3.3-20.04
+REGISTRY ?= docker.io
 
 all: build
 
 build:
-	docker build --build-arg REGISTRY=$(REGISTRY) --rm=true -t $(REGISTRY)/$(USER)/kobase:$(VERSION) .
+	docker build --build-arg REGISTRY=$(REGISTRY) --rm=true -t $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION) .
 
 shell:
-	docker run --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(REGISTRY)/$(USER)/kobase:$(VERSION) bash -l
+	docker run --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION) bash -l
 
 push:
-	docker push $(REGISTRY)/$(USER)/kobase:$(VERSION)
+	docker push $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION)
 
 .PHONY: all clean test push shell
