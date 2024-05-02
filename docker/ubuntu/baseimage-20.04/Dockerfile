@@ -158,7 +158,9 @@ ARG MISC_TOOLS="\
     zip \
     "
 # Extra dependencies.
-ARG LUAJIT_DEPS="gcc-multilib"
+# NOTE: we don't install `gcc-multilib`, as it conflicts with cross-toolchains.
+# (Cf. https://bugs.launchpad.net/ubuntu/+source/gcc-defaults/+bug/1300211)
+ARG LUAJIT_DEPS="gcc-9-multilib"
 # NOTE: SDL2 is also needed for the tests.
 ARG APPIMAGE_DEPS="libsdl2-2.0-0"
 RUN sudo --preserve-env=DEBIAN_FRONTEND apt-get install --no-install-recommends -y \
@@ -166,6 +168,12 @@ RUN sudo --preserve-env=DEBIAN_FRONTEND apt-get install --no-install-recommends 
     $APPIMAGE_DEPS \
     $MISC_TOOLS \
     ;
+# Fix `gcc -m32` inclusion of <asm/errno.h> et al: `/usr/include/asm` is
+# normally provided by `gcc-multilib`, and link to `x86_64-linux-gnu/asm`,
+# but because `/usr/include` is part of the default include directories of
+# cross-toolchains too we need another location only used by the native
+# toolchain: `/usr/local/include` to the rescue!
+RUN sudo ln -sf /usr/include/x86_64-linux-gnu/asm /usr/local/include/asm
 # Create a symlink to prevent trouble finding the library in CI.
 # TODO: make this more dependable in base.
 RUN sudo ln -sf /usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0 /usr/lib/x86_64-linux-gnu/libSDL2.so
