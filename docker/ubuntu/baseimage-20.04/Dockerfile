@@ -186,13 +186,13 @@ RUN sudo ln -sf /usr/include/x86_64-linux-gnu/asm /usr/local/include/asm
 RUN sudo ln -sf /usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0 /usr/lib/x86_64-linux-gnu/libSDL2.so
 
 # shellcheck
-ARG SHELLCHECK_VERSION="0.8.0"
+ARG SHELLCHECK_VERSION="0.10.0"
 RUN wget -O - https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz | tar --strip-components=1 -xJf - --no-anchored shellcheck
 RUN sudo install -m 755 shellcheck /usr/local/bin
 RUN rm shellcheck
 
 # shfmt
-ARG SHFMT_VER="3.4.3"
+ARG SHFMT_VER="3.8.0"
 RUN wget -O shfmt https://github.com/mvdan/sh/releases/download/v${SHFMT_VER}/shfmt_v${SHFMT_VER}_linux_amd64
 RUN sudo install -m 755 shfmt /usr/local/bin
 RUN rm shfmt
