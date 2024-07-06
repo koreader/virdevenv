@@ -198,6 +198,10 @@ RUN rm -rf ccache*
 ARG CMAKE_LINT_VER="1.4.3"
 RUN sudo python3 -m pip install cmakelint==${CMAKE_LINT_VER}
 
+# meson
+ARG MESON_VER="1.4.1"
+RUN sudo python3 -m pip install meson==${MESON_VER}
+
 # ninjatracing
 ARG NINJATRACING_VER="a669e3644cf22b29cbece31dbed2cfbf34e5f48e"
 RUN wget -O ninjatracing.zip https://github.com/nico/ninjatracing/archive/${NINJATRACING_VER}.zip
