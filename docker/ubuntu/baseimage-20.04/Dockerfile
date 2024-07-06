@@ -193,6 +193,10 @@ RUN tar xf ccache.tar.xz
 RUN sudo make -C ccache-${CCACHE_VER}-linux-x86_64 install
 RUN rm -rf ccache*
 
+# cmake-lint
+ARG CMAKE_LINT_VER="1.4.3"
+RUN sudo python3 -m pip install cmakelint==${CMAKE_LINT_VER}
+
 # shellcheck
 ARG SHELLCHECK_VERSION="0.10.0"
 RUN wget -O - https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz | tar --strip-components=1 -xJf - --no-anchored shellcheck
