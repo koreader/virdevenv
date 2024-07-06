@@ -23,6 +23,9 @@ RUN apt-get install --no-install-recommends -y \
     wget \
     ;
 
+# Setup root user.
+COPY bashrc /root/.bashrc
+
 # Add dedicated user.
 RUN useradd -m ko -s /bin/bash
 RUN usermod -aG sudo ko
