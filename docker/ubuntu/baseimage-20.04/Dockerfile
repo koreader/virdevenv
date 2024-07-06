@@ -167,6 +167,8 @@ ARG MISC_TOOLS="\
     p7zip-full \
     patch \
     pkg-config \
+    python3 \
+    python3-pip \
     zip \
     "
 RUN sudo --preserve-env=DEBIAN_FRONTEND apt-get install --no-install-recommends -y \
@@ -208,9 +210,11 @@ RUN rm shfmt
 # }}}
 
 # Cleanup.
-RUN rm -vrf ~/.cache
+RUN sudo apt-get remove -y --auto-remove python3-pip
 RUN sudo apt-get clean
 RUN sudo rm -rf \
+    ~ko/.cache \
+    ~root/.cache \
     /tmp/* \
     /usr/local/lib/luarocks/rocks-5.1/*/*/docs \
     /usr/share/cmake-*/Help \
