@@ -1,7 +1,7 @@
 ARG REGISTRY=docker.io
-FROM $REGISTRY/koreader/kobase:0.3.2-20.04 AS base
+FROM scratch AS base
 
-FROM base AS build
+FROM $REGISTRY/koreader/kobase:0.3.3-20.04 AS build
 
 RUN sudo apt-get -qq update
 RUN wget https://github.com/koreader/koreader-base/raw/b80105edceba77e28242e1311386210af1912197/toolchain/Makefile
@@ -10,13 +10,47 @@ RUN wget https://github.com/koreader/koreader-base/raw/b80105edceba77e28242e1311
 ARG NDK NDK_SUM
 RUN sudo make -C /opt -f "$PWD/Makefile" TOOLCHAIN_DIR=/opt \
   NDK_DIR="$NDK" NDK_SUM="$NDK_SUM" android-ndk
+RUN sudo bash -e <<EOF
+  cd /opt/$NDK
+  rm -vrf prebuilt/android-*
+  rm -vrf shader-tools simpleperf
+  rm -vrf sources/third_party
+  rm -vrf toolchains/renderscript
+  pushd toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib
+  rm -vrf aarch64-linux-android/2[^1]*
+  rm -vrf aarch64-linux-android/[3-9]*
+  rm -vrf arm-linux-androideabi/1[^8]*
+  rm -vrf arm-linux-androideabi/[2-9]*
+  rm -vrf i686-linux-android/1[^8]
+  rm -vrf i686-linux-android/[2-9]*
+  rm -vrf x86_64-linux-android/2[^1]*
+  rm -vrf x86_64-linux-android/[3-9]*
+  popd
+  find . -name 'libomp.*' -print0 | xargs -0 rm -v
+  find . -name 'libFuzzer.*' -print0 | xargs -0 rm -v
+  find . -name 'libclang_rt.*' -print0 | /usr/bin/grep -E --null-data '/libclang_rt\.(\w+san|fuzzer|profile|scudo|stats)' | xargs -0 rm -v
+  pushd toolchains/llvm/prebuilt/linux-x86_64
+  rm bin/clang-{check,format,tidy*}
+  strip --strip-unneeded lib64/liblldb*
+EOF
 
 # Install SDK.
 ARG JDK
-RUN sudo apt-get -qq install --no-install-recommends openjdk-$JDK-jdk-headless
+# NOTE: add `ttf-bitstream-vera` so the bigger `fonts-dejavu-core` package does not get installed.
+RUN sudo apt-get -qq install --no-install-recommends ttf-bitstream-vera openjdk-$JDK-jdk-headless
 ARG SDK SDK_SUM
 RUN sudo make -C /opt -f "$PWD/Makefile" TOOLCHAIN_DIR=/opt \
   SDK_SUM="$SDK_SUM" SDK_TARBALL="commandlinetools-linux-$SDK.zip" android-sdk
+RUN sudo hardlink /opt/android-sdk-linux
+
+# Since we use the host clang compiler provided by the NDK, we do not
+# need gcc-multilib / g++, and only keep some of their dependencies.
+RUN apt-cache depends --important gcc-9-multilib \
+  | sed -n '/^ *Depends: \(.*\)$/{s//\1/;/^gcc/d;p}' \
+  | xargs sudo apt-mark manual
+RUN sudo apt-get autoremove -y g++ gcc-9-multilib
+# We also don't need SDL2.
+RUN sudo apt-get autoremove -y libsdl2-2.0-0
 
 # Cleanup.
 RUN rm -vrf ~/.android/cache
@@ -25,6 +59,8 @@ RUN sudo rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 FROM base
 COPY --from=build / /
+USER ko
+WORKDIR /home/ko
 
 # Setup shell environment.
 ARG JDK NDK
