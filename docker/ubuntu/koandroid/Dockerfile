@@ -8,15 +8,15 @@ RUN wget https://github.com/koreader/koreader-base/raw/b80105edceba77e28242e1311
 
 # Install NDK.
 ARG NDK NDK_SUM
-RUN make NDK_DIR="$NDK" NDK_SUM="$NDK_SUM" android-ndk
-# And trim it.
-RUN hardlink "$NDK"
+RUN sudo make -C /opt -f "$PWD/Makefile" TOOLCHAIN_DIR=/opt \
+  NDK_DIR="$NDK" NDK_SUM="$NDK_SUM" android-ndk
 
 # Install SDK.
 ARG JDK
 RUN sudo apt-get -qq install --no-install-recommends openjdk-$JDK-jdk-headless
 ARG SDK SDK_SUM
-RUN make SDK_SUM="$SDK_SUM" SDK_TARBALL="commandlinetools-linux-$SDK.zip" android-sdk
+RUN sudo make -C /opt -f "$PWD/Makefile" TOOLCHAIN_DIR=/opt \
+  SDK_SUM="$SDK_SUM" SDK_TARBALL="commandlinetools-linux-$SDK.zip" android-sdk
 
 # Cleanup.
 RUN rm -vrf ~/.android/cache
@@ -28,10 +28,10 @@ COPY --from=build / /
 
 # Setup shell environment.
 ARG JDK NDK
-RUN tee -a .bashrc <<EOF
+RUN sudo tee -a ~ko/.bashrc /root/.bashrc <<EOF
 export JAVA_HOME='/usr/lib/jvm/java-$JDK-openjdk-amd64'
-export ANDROID_NDK_HOME='/home/ko/$NDK'
-export ANDROID_HOME='/home/ko/android-sdk-linux'
+export ANDROID_NDK_HOME='/opt/$NDK'
+export ANDROID_HOME='/opt/android-sdk-linux'
 export PATH="\$ANDROID_HOME/build-tools/30.0.2:\$PATH"
 export PATH="\$ANDROID_HOME/cmdline-tools/latest/bin:\$PATH"
 export PATH="\$ANDROID_HOME/platform-tools:\$PATH"
