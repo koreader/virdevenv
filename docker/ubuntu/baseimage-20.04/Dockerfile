@@ -20,6 +20,7 @@ RUN apt-get install --no-install-recommends -y \
     less \
     neovim \
     sudo \
+    unzip \
     wget \
     ;
 
@@ -36,7 +37,7 @@ USER ko
 
 # compile custom xgettext with newline patch, cf. https://github.com/koreader/koreader/pull/5238#issuecomment-523794831
 # upstream bug https://savannah.gnu.org/bugs/index.php?56794
-ARG GETTEXT_VER=0.21
+ARG GETTEXT_VER="0.21"
 RUN wget http://ftpmirror.gnu.org/gettext/gettext-${GETTEXT_VER}.tar.gz \
     || wget http://ftp.gnu.org/pub/gnu/gettext/gettext-${GETTEXT_VER}.tar.gz
 RUN tar -xf gettext-${GETTEXT_VER}.tar.gz
@@ -47,24 +48,9 @@ RUN sudo make -C gettext-tools/src/ install-strip
 WORKDIR ..
 RUN rm -rf gettext-${GETTEXT_VER}*
 
-# LINTERS. {{{
-
-ARG SHELLCHECK_VERSION="v0.8.0"
-ARG SHELLCHECK_URL="https://github.com/koalaman/shellcheck/releases/download/$SHELLCHECK_VERSION/shellcheck-$SHELLCHECK_VERSION.linux.x86_64.tar.xz"
-RUN wget -O - "$SHELLCHECK_URL" | tar --strip-components=1 -xJf - --no-anchored shellcheck
-RUN sudo install -m 755 shellcheck /usr/local/bin
-RUN rm shellcheck
-
-ARG SHFMT_URL="https://github.com/mvdan/sh/releases/download/v3.4.3/shfmt_v3.4.3_linux_amd64"
-RUN wget -O shfmt "$SHFMT_URL"
-RUN sudo install -m 755 shfmt /usr/local/bin
-RUN rm shfmt
-
-# }}}
-
 # LUAJIT. {{{
 
-ARG LUAJIT_VERSION=2.1.0-beta3
+ARG LUAJIT_VERSION="2.1.0-beta3"
 RUN git clone --branch v${LUAJIT_VERSION} --depth 1 https://github.com/LuaJIT/LuaJIT.git luajit
 WORKDIR luajit
 RUN make -j"$(nproc)" amalg
@@ -76,12 +62,10 @@ RUN rm -rf luajit
 
 # }}}
 
-RUN sudo apt-get install --no-install-recommends -y unzip
-
 # LUAROCKS. {{{
 
 # Install luarocks.
-ARG LUAROCKS_VERSION=3.11.0
+ARG LUAROCKS_VERSION="3.11.0"
 RUN wget https://luarocks.github.io/luarocks/releases/luarocks-${LUAROCKS_VERSION}.tar.gz
 RUN tar xvf luarocks-${LUAROCKS_VERSION}.tar.gz
 WORKDIR luarocks-${LUAROCKS_VERSION}
@@ -94,6 +78,10 @@ RUN rm -rf luarocks-${LUAROCKS_VERSION}*
 RUN sudo tee -a /usr/local/etc/luarocks/config-5.1.lua <<\EOF
 wrap_bin_scripts = false
 EOF
+
+# }}}
+
+# LUA PACKAGES. {{{
 
 # lfs
 RUN sudo luarocks install luafilesystem
@@ -112,7 +100,7 @@ RUN sudo luarocks install luacheck
 RUN sudo sed -i 's/ lua$/ luajit/' $(which luacheck)
 
 # lanes (for parallel luacheck)
-ARG LANES_VER=3.17.0
+ARG LANES_VER="3.17.0"
 RUN sudo luarocks install lanes
 RUN wget https://github.com/LuaLanes/lanes/archive/refs/tags/v${LANES_VER}.tar.gz
 RUN tar -xf v${LANES_VER}.tar.gz
@@ -155,7 +143,13 @@ RUN rm -rf luacov-coveralls-master
 
 # }}}
 
-# Other development dependencies / tools.
+# OTHER. {{{
+
+# NOTE: SDL2 is also needed for the tests.
+ARG APPIMAGE_DEPS="libsdl2-2.0-0"
+# NOTE: we don't install `gcc-multilib`, as it conflicts with cross-toolchains.
+# (Cf. https://bugs.launchpad.net/ubuntu/+source/gcc-defaults/+bug/1300211)
+ARG LUAJIT_DEPS="gcc-9-multilib"
 ARG MISC_TOOLS="\
     autoconf2.64 \
     automake \
@@ -174,18 +168,11 @@ ARG MISC_TOOLS="\
     p7zip-full \
     patch \
     pkg-config \
-    unzip \
     zip \
     "
-# Extra dependencies.
-# NOTE: we don't install `gcc-multilib`, as it conflicts with cross-toolchains.
-# (Cf. https://bugs.launchpad.net/ubuntu/+source/gcc-defaults/+bug/1300211)
-ARG LUAJIT_DEPS="gcc-9-multilib"
-# NOTE: SDL2 is also needed for the tests.
-ARG APPIMAGE_DEPS="libsdl2-2.0-0"
 RUN sudo --preserve-env=DEBIAN_FRONTEND apt-get install --no-install-recommends -y \
-    $LUAJIT_DEPS \
     $APPIMAGE_DEPS \
+    $LUAJIT_DEPS \
     $MISC_TOOLS \
     ;
 # Fix `gcc -m32` inclusion of <asm/errno.h> et al: `/usr/include/asm` is
@@ -197,6 +184,20 @@ RUN sudo ln -sf /usr/include/x86_64-linux-gnu/asm /usr/local/include/asm
 # Create a symlink to prevent trouble finding the library in CI.
 # TODO: make this more dependable in base.
 RUN sudo ln -sf /usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0 /usr/lib/x86_64-linux-gnu/libSDL2.so
+
+# shellcheck
+ARG SHELLCHECK_VERSION="0.8.0"
+RUN wget -O - https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz | tar --strip-components=1 -xJf - --no-anchored shellcheck
+RUN sudo install -m 755 shellcheck /usr/local/bin
+RUN rm shellcheck
+
+# shfmt
+ARG SHFMT_VER="3.4.3"
+RUN wget -O shfmt https://github.com/mvdan/sh/releases/download/v${SHFMT_VER}/shfmt_v${SHFMT_VER}_linux_amd64
+RUN sudo install -m 755 shfmt /usr/local/bin
+RUN rm shfmt
+
+# }}}
 
 # }}}
 
