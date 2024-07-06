@@ -52,6 +52,18 @@ RUN sudo apt-get autoremove -y g++ gcc-9-multilib
 # We also don't need SDL2.
 RUN sudo apt-get autoremove -y libsdl2-2.0-0
 
+# Install uber-apk-signer.
+ARG UBER_APK_SIGNER_VER="1.3.0"
+RUN wget -O uber-apk-signer.jar https://github.com/patrickfav/uber-apk-signer/releases/download/v${UBER_APK_SIGNER_VER}/uber-apk-signer-${UBER_APK_SIGNER_VER}.jar
+RUN sudo install -d /opt/uber-apk-signer
+RUN sudo install -m644 uber-apk-signer.jar /opt/uber-apk-signer/
+COPY --chmod=755 <<'EOF' /opt/uber-apk-signer/uber-apk-signer
+#!/bin/sh
+exec java -jar /opt/uber-apk-signer/uber-apk-signer.jar "$@"
+EOF
+RUN sudo ln -snfr /opt/uber-apk-signer/uber-apk-signer /usr/local/bin/
+RUN rm uber-apk-signer.jar
+
 # Cleanup.
 RUN rm -vrf ~/.android/cache
 RUN sudo apt-get clean
