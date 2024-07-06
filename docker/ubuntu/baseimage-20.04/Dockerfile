@@ -202,6 +202,9 @@ RUN sudo apt-get clean
 RUN sudo rm -rf \
     /tmp/* \
     /usr/local/lib/luarocks/rocks-5.1/*/*/docs \
+    /usr/share/cmake-*/Help \
+    /usr/share/doc \
+    /usr/share/nvim/runtime/doc \
     /var/cache/debconf/*-old \
     /var/cache/luarocks \
     /var/lib/apt/lists/* \
