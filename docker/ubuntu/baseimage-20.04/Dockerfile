@@ -97,7 +97,6 @@ EOF
 RUN luarocks install luafilesystem
 
 # busted
-RUN luarocks install ansicolors
 RUN luarocks install busted
 
 # luasec.
