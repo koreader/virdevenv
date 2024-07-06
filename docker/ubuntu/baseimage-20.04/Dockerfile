@@ -30,8 +30,6 @@ RUN echo 'ko ALL=(ALL:ALL) NOPASSWD:ALL' | EDITOR='tee -a' visudo
 WORKDIR /home/ko
 COPY --chown=ko bashrc .bashrc
 USER ko
-RUN mkdir -p local/bin
-ENV PATH=/home/ko/local/bin:$PATH
 
 # compile custom xgettext with newline patch, cf. https://github.com/koreader/koreader/pull/5238#issuecomment-523794831
 # upstream bug https://savannah.gnu.org/bugs/index.php?56794
