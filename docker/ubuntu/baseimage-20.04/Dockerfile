@@ -160,6 +160,7 @@ ARG MISC_TOOLS="\
     dpkg-dev \
     fakeroot \
     hardlink \
+    jq \
     libtool \
     nasm \
     ninja-build \
@@ -196,6 +197,13 @@ RUN rm -rf ccache*
 # cmake-lint
 ARG CMAKE_LINT_VER="1.4.3"
 RUN sudo python3 -m pip install cmakelint==${CMAKE_LINT_VER}
+
+# ninjatracing
+ARG NINJATRACING_VER="a669e3644cf22b29cbece31dbed2cfbf34e5f48e"
+RUN wget -O ninjatracing.zip https://github.com/nico/ninjatracing/archive/${NINJATRACING_VER}.zip
+RUN unzip -j ninjatracing.zip '*/ninjatracing'
+RUN sudo install -m755 ninjatracing /usr/local/bin/
+RUN rm ninjatracing*
 
 # shellcheck
 ARG SHELLCHECK_VERSION="0.10.0"
