@@ -87,43 +87,65 @@ RUN sudo make install
 WORKDIR ..
 RUN rm -rf luarocks-${LUAROCKS_VERSION}*
 # Configure.
-RUN mkdir -p ~/.luarocks
-RUN tee -a ~/.luarocks/config-5.1.lua <<EOF
-local_by_default = true
+RUN sudo tee -a /usr/local/etc/luarocks/config-5.1.lua <<\EOF
 wrap_bin_scripts = false
 EOF
 
 # lfs
-RUN luarocks install luafilesystem
+RUN sudo luarocks install luafilesystem
 
 # busted
-RUN luarocks install busted
+RUN sudo luarocks install busted
 
 # luasec.
 RUN sudo apt-get install -y --no-install-recommends libssl-dev
 # luasec doesn't automatically detect 64-bit libs
-RUN luarocks install luasec OPENSSL_LIBDIR=/usr/lib/x86_64-linux-gnu
+RUN sudo luarocks install luasec OPENSSL_LIBDIR=/usr/lib/x86_64-linux-gnu
 RUN sudo apt-get remove -y --auto-remove libssl-dev
 
 # luacheck
-RUN luarocks install luacheck
-RUN eval "$(luarocks path)" && sed -i 's/ lua$/ luajit/' $(which luacheck)
+RUN sudo luarocks install luacheck
+RUN sudo sed -i 's/ lua$/ luajit/' $(which luacheck)
 
 # lanes (for parallel luacheck)
-RUN luarocks install lanes
+ARG LANES_VER=3.17.0
+RUN sudo luarocks install lanes
+RUN wget https://github.com/LuaLanes/lanes/archive/refs/tags/v${LANES_VER}.tar.gz
+RUN tar -xf v${LANES_VER}.tar.gz
+RUN rm v${LANES_VER}.tar.gz
+WORKDIR lanes-${LANES_VER}
+# Remove `pthread_create` root specific setting (unsupported in docker).
+RUN patch -p1 <<\EOF
+diff --git a/src/threading.c b/src/threading.c
+index 2464d03..44357cb 100644
+--- a/src/threading.c
++++ b/src/threading.c
+@@ -810,7 +810,7 @@ void THREAD_CREATE( THREAD_T* ref, THREAD_RETURN_T (*func)( void*), void* data,
+     PT_CALL( pthread_attr_setstacksize( &a, _THREAD_STACK_SIZE));
+ #endif
+
+-    if (change_priority)
++    if (0)
+     {
+         struct sched_param sp;
+         // "The specified scheduling parameters are only used if the scheduling
+EOF
+RUN sudo luarocks make lanes-${LANES_VER}-0.rockspec
 # Ensure lanes module is detected by luacheck.
-RUN eval "$(luarocks path)" && luacheck --version | grep "^LuaLanes: ${LANES_VERSION}"
+RUN luacheck --version | grep "^LuaLanes: ${LANES_VERSION}"
+WORKDIR ..
+RUN sudo rm -rf lanes-${LANES_VER}
 
 # ldoc
-RUN luarocks install ldoc
+RUN sudo luarocks install ldoc
 
 # luacov
-RUN luarocks install luacov
+RUN sudo luarocks install luacov
 RUN wget https://github.com/moteus/luacov-coveralls/archive/refs/heads/master.zip
 RUN unzip master.zip
 RUN rm master.zip
 WORKDIR luacov-coveralls-master
-RUN luarocks make rockspecs/luacov-coveralls-scm-0.rockspec
+RUN sudo luarocks make rockspecs/luacov-coveralls-scm-0.rockspec
 WORKDIR ..
 RUN rm -rf luacov-coveralls-master
 
@@ -177,7 +199,14 @@ RUN sudo ln -sf /usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0 /usr/lib/x86_64-linux
 # Cleanup.
 RUN rm -vrf ~/.cache
 RUN sudo apt-get clean
-RUN sudo rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN sudo rm -rf \
+    /tmp/* \
+    /usr/local/lib/luarocks/rocks-5.1/*/*/docs \
+    /var/cache/debconf/*-old \
+    /var/cache/luarocks \
+    /var/lib/apt/lists/* \
+    /var/tmp/* \
+    ;
 
 # Final image.
 FROM base
