@@ -1,11 +1,9 @@
 #!/bin/bash
 
-HOME=/home/ko
-
 # shellcheck source=/dev/null
 . /etc/bash_completion
 
-XTOOLS=${HOME}/x-tools
+XTOOLS=/usr/local/x-tools
 
 for tc in "${XTOOLS}"/*/bin; do
     export PATH=$tc:$PATH
