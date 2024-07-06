@@ -147,6 +147,8 @@ RUN rm -rf luacov-coveralls-master
 
 # NOTE: SDL2 is also needed for the tests.
 ARG APPIMAGE_DEPS="libsdl2-2.0-0"
+# GLib meson build needs distutils.
+ARG GLIB_DEPS="python3-distutils"
 # NOTE: we don't install `gcc-multilib`, as it conflicts with cross-toolchains.
 # (Cf. https://bugs.launchpad.net/ubuntu/+source/gcc-defaults/+bug/1300211)
 ARG LUAJIT_DEPS="gcc-9-multilib"
@@ -174,6 +176,7 @@ ARG MISC_TOOLS="\
     "
 RUN sudo --preserve-env=DEBIAN_FRONTEND apt-get install --no-install-recommends -y \
     $APPIMAGE_DEPS \
+    $GLIB_DEPS \
     $LUAJIT_DEPS \
     $MISC_TOOLS \
     ;
