@@ -133,8 +133,6 @@ RUN rm -rf luacov-coveralls-master
 # }}}
 
 # Other development dependencies / tools.
-# NOTE: libtool-bin is due to a libzmq issue, see https://github.com/zeromq/libzmq/pull/1497
-# (can be removed if libzmq is bumped or the build switched from autotools to cmake).
 ARG MISC_TOOLS="\
     autoconf2.64 \
     automake \
@@ -147,7 +145,6 @@ ARG MISC_TOOLS="\
     fakeroot \
     hardlink \
     libtool \
-    libtool-bin \
     nasm \
     ninja-build \
     openssh-client \
