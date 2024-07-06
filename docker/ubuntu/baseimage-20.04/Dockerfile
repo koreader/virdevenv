@@ -37,7 +37,8 @@ USER ko
 # compile custom xgettext with newline patch, cf. https://github.com/koreader/koreader/pull/5238#issuecomment-523794831
 # upstream bug https://savannah.gnu.org/bugs/index.php?56794
 ARG GETTEXT_VER=0.21
-RUN wget http://ftpmirror.gnu.org/gettext/gettext-${GETTEXT_VER}.tar.gz
+RUN wget http://ftpmirror.gnu.org/gettext/gettext-${GETTEXT_VER}.tar.gz \
+    || wget http://ftp.gnu.org/pub/gnu/gettext/gettext-${GETTEXT_VER}.tar.gz
 RUN tar -xf gettext-${GETTEXT_VER}.tar.gz
 WORKDIR gettext-${GETTEXT_VER}
 RUN ./configure --disable-dependency-tracking --disable-shared --disable-static
