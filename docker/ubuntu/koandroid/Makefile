@@ -1,4 +1,4 @@
-VERSION=0.8.1-20.04
+VERSION=0.8.2-20.04
 REGISTRY?=docker.io
 JDK=17
 NDK=android-ndk-r23c
