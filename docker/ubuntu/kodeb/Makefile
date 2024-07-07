@@ -1,5 +1,5 @@
 NAME = kodeb
-VERSION = 0.1.0-20.04
+VERSION = 0.1.1-20.04
 REGISTRY ?= docker.io
 
 all: build
