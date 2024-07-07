@@ -1,4 +1,4 @@
-VERSION=0.4.3-20.04
+VERSION=0.4.4-20.04
 REGISTRY?=docker.io
 
 all: build
