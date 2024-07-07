@@ -1,7 +1,7 @@
 ARG REGISTRY=docker.io
 FROM scratch AS base
 
-FROM $REGISTRY/koreader/kobase:0.3.3-20.04 AS build
+FROM $REGISTRY/koreader/kobase:0.3.4-20.04 AS build
 
 RUN sudo apt-get -qq update
 RUN wget https://github.com/koreader/koreader-base/raw/b80105edceba77e28242e1311386210af1912197/toolchain/Makefile
