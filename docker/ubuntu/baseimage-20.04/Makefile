@@ -1,5 +1,5 @@
 IMAGE = kobase
-VERSION = 0.3.3-20.04
+VERSION = 0.3.4-20.04
 REGISTRY ?= docker.io
 
 all: build
