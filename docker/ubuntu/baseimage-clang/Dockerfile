@@ -1,7 +1,7 @@
 ARG REGISTRY=docker.io
 FROM scratch as base
 
-FROM $REGISTRY/koreader/kobase:0.3.2-20.04 AS build
+FROM $REGISTRY/koreader/kobase:0.3.4-20.04 AS build
 
 USER root
 
