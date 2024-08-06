@@ -4,7 +4,7 @@ FROM scratch AS base
 FROM $REGISTRY/koreader/kobase:0.3.4-20.04 AS build
 
 RUN sudo apt-get -qq update
-RUN wget https://github.com/koreader/koreader-base/raw/b80105edceba77e28242e1311386210af1912197/toolchain/Makefile
+RUN wget https://github.com/koreader/koreader-base/raw/4e2c7afb94cb11c9eaa293c2285ed9950118077c/toolchain/Makefile
 
 # Install NDK.
 ARG NDK NDK_SUM
