@@ -46,7 +46,7 @@ CMD x11vnc -forever -usepw -create -shared
 ```
 Build the docker image:
 ```
-docker build -f <custom_docker_file> -t vnckoappimage
+docker build -f <custom_docker_file> -t vnckoappimage .
 ```
 Using the modified docker image above, you can then run it headlessly, like so:
 ```
