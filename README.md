@@ -67,10 +67,45 @@ winpty docker exec -it vncko bash
 ```
 From here, you can edit the frontend code. When you want to see your changes reflected, you can **Restart KOReader** from the emulator KOReader system menu.
 
+### Updated KOReader
+Allows you to work with a more recent version of KOReader.
+```
+# Use Debian Bullseye as the base image
+FROM debian:bullseye-slim
+USER root
+
+# Update packages and install x11vnc, xvfb, SDL2, and other dependencies
+RUN apt-get update && apt-get install -y \
+    x11vnc \
+    xvfb \
+    libsdl2-2.0-0 \
+    libutf8proc2 \
+    libfontconfig1 \
+    libfreetype6
+
+# Set up the VNC password
+RUN mkdir -p ~/.vnc && x11vnc -storepasswd 1234 ~/.vnc/passwd
+
+# Create the directory for KOReader
+RUN mkdir -p /home/ko
+
+# Download and extract the KOReader AppImage into /home/ko
+# Feel free to update the koreader version
+ADD https://github.com/koreader/koreader/releases/download/v2024.07/koreader-appimage-x86_64-linux-gnu-v2024.07.AppImage /home/ko/appimage
+
+# Ensure the AppImage is executable and extract it
+RUN chmod +x /home/ko/appimage && cd /home/ko && ./appimage --appimage-extract
+
+# Start the VNC server
+CMD x11vnc -forever -usepw -create -shared
+```
+The rest is as previously explained from "Build the Docker image:"
+
 ### Notes
 * For some reason, if you close down the emulator after opening it then you lose keyboard focus in the xterm window
 * You need to prefix you `docker exec` in Windows with `winpty` for an interactive session to work
+* You don't need `winpty` if you use powershell
 * The above steps were tested on Windows 10 with docker for desktop
 * You could mount in the front end code using `-v` if you extracted the AppImage files locally, todo: demonstrate this
 * You can of course `docker cp` your edited code out
-
+* Be cautious not to run the default VNC server that comes with some VNC softwares, as you may experience an infinite screen duplication effect of the host's display instead of what we want
