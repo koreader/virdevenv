@@ -101,7 +101,6 @@ RUN sudo sed -i 's/ lua$/ luajit/' $(which luacheck)
 
 # lanes (for parallel luacheck)
 ARG LANES_VER="3.17.0"
-RUN sudo luarocks install lanes
 RUN wget https://github.com/LuaLanes/lanes/archive/refs/tags/v${LANES_VER}.tar.gz
 RUN tar -xf v${LANES_VER}.tar.gz
 RUN rm v${LANES_VER}.tar.gz
