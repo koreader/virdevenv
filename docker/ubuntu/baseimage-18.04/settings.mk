@@ -1,0 +1,2 @@
+IMAGE = kobase-18.04
+VERSION = 0.3.0
