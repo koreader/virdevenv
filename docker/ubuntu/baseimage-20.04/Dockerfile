@@ -25,14 +25,14 @@ RUN apt-get install --no-install-recommends -y \
     ;
 
 # Setup root user.
-COPY bashrc /root/.bashrc
+COPY baseimage-20.04/bashrc /root/.bashrc
 
 # Add dedicated user.
 RUN useradd -m ko -s /bin/bash
 RUN usermod -aG sudo ko
 RUN echo 'ko ALL=(ALL:ALL) NOPASSWD:ALL' | EDITOR='tee -a' visudo
 WORKDIR /home/ko
-COPY --chown=ko bashrc .bashrc
+COPY --chown=ko baseimage-20.04/bashrc .bashrc
 USER ko
 
 # compile custom xgettext with newline patch, cf. https://github.com/koreader/koreader/pull/5238#issuecomment-523794831

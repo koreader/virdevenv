@@ -1,0 +1,2 @@
+IMAGE = kobase-22.04
+VERSION = 0.3.0
