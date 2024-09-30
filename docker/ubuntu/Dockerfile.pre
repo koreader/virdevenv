@@ -1,0 +1,3 @@
+ARG REGISTRY=docker.io
+ARG BASE=scratch
+FROM $REGISTRY/$BASE AS build

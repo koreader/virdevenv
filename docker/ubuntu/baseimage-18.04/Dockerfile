@@ -1,11 +1,6 @@
-ARG REGISTRY=docker.io
-FROM $REGISTRY/phusion/baseimage:bionic-1.0.0
-
 COPY ./baseimage-18.04/*.sh /
 
-RUN /bootstrap.sh && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN /bootstrap.sh
 
 RUN useradd -m ko
 RUN usermod -aG sudo ko
