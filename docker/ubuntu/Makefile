@@ -3,6 +3,7 @@
 
 BUILDER ?= docker
 REGISTRY ?= docker.io
+BASEIMAGE ?= koreader/kobase:0.3.4-20.04
 
 IMAGES = $(patsubst %/,%,$(dir $(wildcard */Dockerfile)))
 
@@ -28,25 +29,29 @@ endef
 
 define image_build
 	$($(BUILDER)_build)
-	--build-arg REGISTRY=$(REGISTRY)
+	--build-arg REGISTRY=$(REGISTRY) --build-arg BASE=$(BASE)
 	$(patsubst %,--build-arg %,$(strip $(BUILD_ARGS)))
 	-t $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION)
-	--file $1/Dockerfile .
+	--file - .
 endef
 
 define image_rules
 $(eval IMAGE := $1)
 $(eval VERSION := )
+$(eval BASE := )
 $(eval BUILD_ARGS := )
 $(eval include $1/settings.mk)
 ifeq (,$$(VERSION))
 $$(error $1/settings.mk does not define a VERSION)
 endif
+ifeq (,$$(BASE))
+$$(error $1/settings.mk does not define a BASE)
+endif
 
 .PHONY: $1 $1/ $1/push $1/shell
 
 $1 $1/: $1/Dockerfile
-	$(strip $(call image_build,$1))
+	cat Dockerfile.pre $1/Dockerfile Dockerfile.post | $(strip $(call image_build,$1))
 
 $1/push:
 	$(BUILDER) push $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION)
@@ -80,6 +85,7 @@ USAGE
   VARIABLES:
 	USER                  repository name (e.g. koreader, default: $(USER))
 	REGISTRY              remote registry to push too (default: $(REGISTRY))
+	BASEIMAGE             default base image (default: $(BASEIMAGE))
 
   IMAGES:$(newline)$(foreach i,$(IMAGES),	$(i)$(newline))
 endef

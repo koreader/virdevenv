@@ -1,6 +1,3 @@
-ARG REGISTRY=docker.io
-FROM $REGISTRY/koreader/kobase-18.04:0.3.0
-
 USER ko
 
 WORKDIR /home/ko

@@ -1,8 +1,3 @@
-ARG REGISTRY=docker.io
-FROM scratch AS base
-
-FROM $REGISTRY/koreader/kobase:0.3.4-20.04 AS build
-
 RUN sudo apt-get -qq update
 RUN wget https://github.com/koreader/koreader-base/raw/4e2c7afb94cb11c9eaa293c2285ed9950118077c/toolchain/Makefile
 
@@ -68,11 +63,6 @@ RUN rm uber-apk-signer.jar
 RUN rm -vrf ~/.android/cache
 RUN sudo apt-get clean
 RUN sudo rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-FROM base
-COPY --from=build / /
-USER ko
-WORKDIR /home/ko
 
 # Setup shell environment.
 ARG JDK NDK

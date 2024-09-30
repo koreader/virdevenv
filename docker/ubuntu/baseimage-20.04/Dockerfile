@@ -1,8 +1,3 @@
-ARG REGISTRY=docker.io
-FROM scratch AS base
-
-FROM $REGISTRY/ubuntu:focal AS build
-
 # BOOTSTRAP {{{
 
 ARG DEBIAN_FRONTEND=noninteractive
@@ -229,25 +224,15 @@ RUN rm shfmt
 
 # Cleanup.
 RUN sudo apt-get remove -y --auto-remove python3-pip
-RUN sudo apt-get clean
 RUN sudo rm -rf \
     ~ko/.cache \
     ~root/.cache \
-    /tmp/* \
     /usr/local/lib/luarocks/rocks-5.1/*/*/docs \
     /usr/share/cmake-*/Help \
     /usr/share/doc \
     /usr/share/nvim/runtime/doc \
     /var/cache/debconf/*-old \
     /var/cache/luarocks \
-    /var/lib/apt/lists/* \
-    /var/tmp/* \
     ;
-
-# Final image.
-FROM base
-COPY --from=build / /
-USER ko
-WORKDIR /home/ko
 
 # vim: sw=4
