@@ -13,9 +13,9 @@ shift 2
 
 echo "installing x-tools: $platform $version"
 
-wget --progress=dot:giga "https://github.com/koreader/koxtoolchain/releases/download/$version/$platform.zip"
-unzip -p "$platform.zip" | sudo tar xzv --no-same-owner -C /usr/local
-rm "$platform.zip"
+wget --progress=dot:giga "https://github.com/koreader/koxtoolchain/releases/download/$version/$platform.tar.gz"
+sudo tar xzv --no-same-owner -C /usr/local -f "$platform.tar.gz"
+rm "$platform.tar.gz"
 cd /usr/local
 sudo chmod +w,og=rX -R x-tools/*/
 sudo rm -vf x-tools/*/build.log.bz2
