@@ -4,6 +4,7 @@
 BUILDER ?= docker
 REGISTRY ?= docker.io
 BASEIMAGE ?= koreader/kobase:0.3.4-20.04
+X_TOOLS_VERSION ?= 2021.12
 
 IMAGES = $(patsubst %/,%,$(dir $(wildcard */Dockerfile)))
 
@@ -86,6 +87,7 @@ USAGE
 	USER                  repository name (e.g. koreader, default: $(USER))
 	REGISTRY              remote registry to push too (default: $(REGISTRY))
 	BASEIMAGE             default base image (default: $(BASEIMAGE))
+	X_TOOLS_VERSION       x-tools version (default: $(X_TOOLS_VERSION))
 
   IMAGES:$(newline)$(foreach i,$(IMAGES),	$(i)$(newline))
 endef
