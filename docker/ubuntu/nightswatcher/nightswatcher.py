@@ -61,11 +61,11 @@ def trigger_build():
         logger.info('Will trigger next nightly build in %s minutes.',
                     wait_time/60)
         gevent.sleep(wait_time)
-        re = requests.post(trigger_url,
+        req = requests.post(trigger_url,
                            data={'token': GITLAB_TRIGGER_TOKEN,
                                  'ref': 'master'},
                            timeout=10)
-        logger.info('New nightly build triggered: %s', re.status_code)
+        logger.info('New nightly build triggered: %s', req.status_code)
         gevent.sleep(1)
 
 
