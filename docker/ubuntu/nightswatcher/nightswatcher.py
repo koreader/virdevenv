@@ -43,11 +43,11 @@ STABLE_BUILD_DIR = BUILD_DIR + 'stable'
 # koreader-ubuntu-touch-arm-linux-gnueabihf-v2015.11-640-g17e9a8e_2018-03-09.targz
 # koreader-android-arm-linux-androideabi-v2015.11-654-gb7392f7_2018-03-09.apk
 artifact_re = re.compile(
-    ('.*/koreader-'
-     '(?P<platform>[a-z0-9\-]+)-'
-     '(?:(?P<arch>arm|aarch64|x86|i686|x86_64)-?.*-)?'
-     '(?P<version>v[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-(?P<commit_number>[0-9]+))?(?:-g(?P<commit_hash>[0-9a-z]{7,12})_(?P<commit_date>[0-9]{4}-[0-9]{2}-[0-9]{2})?)?)'
-     '\.(?P<ftype>[A-Za-z]+).*'))
+    (r'.*/koreader-'
+     r'(?P<platform>[a-z0-9\-]+)-'
+     r'(?:(?P<arch>arm|aarch64|x86|i686|x86_64)-?.*-)?'
+     r'(?P<version>v[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-(?P<commit_number>[0-9]+))?(?:-g(?P<commit_hash>[0-9a-z]{7,12})_(?P<commit_date>[0-9]{4}-[0-9]{2}-[0-9]{2})?)?)'
+     r'\.(?P<ftype>[A-Za-z]+).*'))
 
 def trigger_build():
     repo = 'koreader%2Fnightly-builds'
