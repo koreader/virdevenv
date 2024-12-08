@@ -124,13 +124,17 @@ download_artifact_ext_map = {
     'build_android_aarch64': 'apk',
     'build_android_x86': 'apk',
     'build_appimage': 'AppImage',
+    'build_debian': 'deb',
+    'build_debian_armhf': 'deb',
+    'build_debian_arm64': 'deb',
     'build_ubuntutouch': 'click',
 }
 
 # names come from GitLab, see https://gitlab.com/koreader/nightly-builds/blob/master/.gitlab-ci.yml
 ota_link_models = frozenset([
                         'build_android', 'build_android_aarch64', 'build_android_x86',
-                        'build_appimage'])
+                        'build_appimage',
+                        'build_debian', 'build_debian_armhf', 'build_debian_arm64',])
 ota_zsync_models = frozenset([
                         'build_cervantes',
                         'build_kindle', 'build_legacy_kindle',
