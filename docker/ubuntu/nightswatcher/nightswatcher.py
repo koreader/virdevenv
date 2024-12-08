@@ -269,8 +269,8 @@ class PipeLine():
 
         try:
             data = ujson.load(req.stream)
-        except:
-            raise falcon.HTTPBadRequest('Bad body', '')
+        except Exception as e:
+            raise falcon.HTTPBadRequest('Bad body', '') from e
         logger.debug('Got webhook request: %s', data)
 
         if data['object_kind'] != 'pipeline':
