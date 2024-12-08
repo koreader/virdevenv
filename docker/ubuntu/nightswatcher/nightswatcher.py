@@ -305,6 +305,6 @@ def init():
     # TODO: purge old nightly targz
 
 
-api = falcon.API()
+api = falcon.App()
 api.add_route('/webhooks/gitlab-pipeline', PipeLine())
 init()
