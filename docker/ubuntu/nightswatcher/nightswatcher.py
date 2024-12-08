@@ -274,7 +274,7 @@ class PipeLine():
         logger.debug('Got webhook request: %s', data)
 
         if data['object_kind'] != 'pipeline':
-            resp.body = '["meh"]'
+            resp.text = '["meh"]'
             return
 
         commit = data['commit']
@@ -296,7 +296,7 @@ class PipeLine():
                 if build['status'] != 'success':
                     continue
                 build_fetch_queue.put(build)
-        resp.body = '["ok"]'
+        resp.text = '["ok"]'
 
 
 def init():
