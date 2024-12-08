@@ -76,7 +76,7 @@ def run_cmd(cmd):
 
 def sign_apk(apk_path):
     logger.info('Signing %s...', apk_path)
-    re = gevent.subprocess.check_output(
+    res = gevent.subprocess.check_output(
         ['java', '-jar', 'uber-apk-signer.jar',
          '--ks', APK_SIGN_KEY_STORE_PATH,
          '--ksAlias', APK_SIGN_KEY_ALIAS,
@@ -85,7 +85,7 @@ def sign_apk(apk_path):
          '--apks', apk_path,
          '--overwrite',
          '--verbose'])
-    logger.info('Output from uber-apk-signer:\n%s', re)
+    logger.info('Output from uber-apk-signer:\n%s', res)
 
 
 def get_artifact_metadata(artifact_zip):
