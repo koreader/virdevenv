@@ -94,7 +94,7 @@ def get_artifact_metadata(artifact_zip):
         zf = zipfile.ZipFile(artifact_zip)
     except zipfile.BadZipfile:
         logger.exception('Got invalid zip file: %s', artifact_zip)
-        return None, None
+        return None, None, None, {}
 
     platform = None
     version = None
@@ -161,8 +161,8 @@ def extract_build(artifact_zip, build):
         return
     download_artifact_ext = download_artifact_ext_map.get(build['name'], 'zip')
     if download_artifact_ext not in artifact:
-        logger.error('Invalid build artifact, missing %s file.',
-                     download_artifact_ext)
+        logger.error('Invalid build artifact, missing %s file. Artifact: %s',
+                     download_artifact_ext, artifact)
         return
 
     # check to see if we already have the build
@@ -240,6 +240,7 @@ def fetch_build(build):
     logger.info('Fetching artifacts for build %s(%s): %s',
                 build['name'], build['id'], build['artifacts_file'])
     artifact_zip = '%s/%s_artifacts.zip' % (TMP_DATA_DIR, build['id'])
+
     # `-C -` for continue download from dropped off
     # `-L` to follow redirects
     retcode = run_cmd(['curl', '--retry', '3', '-C', '-', '-L',
