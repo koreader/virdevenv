@@ -40,6 +40,9 @@ ARTIFACT_URL = ('https://gitlab.com/koreader/nightly-builds'
                 '/-/jobs/%s/artifacts/download')
 NIGHTLY_BUILD_DIR = BUILD_DIR + 'nightly'
 STABLE_BUILD_DIR = BUILD_DIR + 'stable'
+
+PROCESSED_BUILDS_FILE = os.environ['PROCESSED_BUILDS_FILE']
+
 # Matching:
 # koreader-ubuntu-touch-arm-linux-gnueabihf-v2015.11-640-g17e9a8e_2018-03-09.targz
 # koreader-android-arm-linux-androideabi-v2015.11-654-gb7392f7_2018-03-09.apk
@@ -236,7 +239,34 @@ def extract_build(artifact_zip, build):
     shutil.rmtree(tmp_version_dir)
 
 
+def is_build_processed(build_id):
+    if not os.path.exists(PROCESSED_BUILDS_FILE):
+        return False
+    with open(PROCESSED_BUILDS_FILE, 'r', encoding='utf-8') as f:
+        processed_builds = f.read().splitlines()
+    return build_id in processed_builds
+
+
+def mark_build_as_processed(build_id):
+    if os.path.exists(PROCESSED_BUILDS_FILE):
+        with open(PROCESSED_BUILDS_FILE, 'r+', encoding='utf-8') as f:
+            processed_builds = f.read().splitlines()
+            if len(processed_builds) >= 500:
+                processed_builds = processed_builds[-499:]
+            processed_builds.append(str(build_id))
+            f.seek(0)
+            f.truncate()
+            f.write('\n'.join(processed_builds) + '\n')
+    else:
+        with open(PROCESSED_BUILDS_FILE, 'w', encoding='utf-8') as f:
+            f.write(build_id + '\n')
+
+
 def fetch_build(build):
+    if is_build_processed(build['id']):
+        logger.info('Build %s (%s) already processed, skipping.', build['name'], build['id'])
+        return
+
     logger.info('Fetching artifacts for build %s(%s): %s',
                 build['name'], build['id'], build['artifacts_file'])
     artifact_zip = '%s/%s_artifacts.zip' % (TMP_DATA_DIR, build['id'])
@@ -250,6 +280,7 @@ def fetch_build(build):
                      build['name'], build['id'])
     else:
         extract_build(artifact_zip, build)
+        mark_build_as_processed(build['id'])
     os.remove(artifact_zip)
 
 
