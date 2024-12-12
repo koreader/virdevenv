@@ -173,10 +173,6 @@ def extract_build(artifact_zip, build):
 
     download_artifact = artifact[download_artifact_ext]
     download_artifact_path = version_dir + download_artifact
-    if os.path.exists(download_artifact_path):
-        logger.info('Skipping because %s already exists.',
-                    download_artifact_path)
-        return
 
     if not os.path.exists(version_dir):
         os.mkdir(version_dir)
@@ -219,12 +215,13 @@ def extract_build(artifact_zip, build):
                     os.remove(android_fdroid_latest)
                 shutil.copy2(tmp_android_fdroid_latest_path, android_fdroid_latest)
 
-    # build zsync metadata for kindle, kobo and pocketbook OTA
+    # build zsync metadata
     if build['name'] in ota_zsync_models:
+        logger.info('Building zsync metadata for %s...', platform)
         tmp_targz_path = tmp_version_dir + artifact['targz']
         # FIXME: check version in latest-nightly and skip old versions
-        zsync_file_stable = OTA_DIR + ('koreader-%s-latest-stable.zsync' % platform)
-        zsync_file_nightly = OTA_DIR + ('koreader-%s-latest-nightly.zsync' % platform)
+        zsync_file_stable = f"{OTA_DIR}koreader-{platform}-latest-stable.zsync"
+        zsync_file_nightly = f"{OTA_DIR}koreader-{platform}-latest-nightly.zsync"
         zsync_file = stable is True and zsync_file_stable or zsync_file_nightly
 
         shutil.move(tmp_targz_path, OTA_DIR)
