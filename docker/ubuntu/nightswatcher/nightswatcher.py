@@ -230,8 +230,24 @@ def extract_build(artifact_zip, build):
 
         if stable is True:
             shutil.copy2(zsync_file, zsync_file_nightly)
-        # TODO: find the new targz file by reading the second line of zsync
-        # file, then purge older targzs
+
+        # Find the new targz file by reading the second line of the zsync file.
+        # Then purge older targzs.
+        stable_targz = None
+        nightly_targz = None
+        if os.path.exists(zsync_file_stable):
+            with open(zsync_file_stable, 'rb') as f:
+                f.readline()
+                stable_targz = f.readline().decode('utf-8', errors='ignore').split()[1]
+        if os.path.exists(zsync_file_nightly):
+            with open(zsync_file_nightly, 'rb') as f:
+                f.readline()
+                nightly_targz = f.readline().decode('utf-8', errors='ignore').split()[1]
+
+        for f in os.listdir(OTA_DIR):
+            if f.startswith(f'koreader-{platform}') and f.endswith('.targz') and f != stable_targz and f != nightly_targz:
+                logger.info(f'Purging old targz: {f}')
+                os.remove(OTA_DIR + f)
 
     shutil.rmtree(tmp_version_dir)
 
