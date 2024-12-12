@@ -5,6 +5,7 @@ from gevent import monkey
 from gevent import queue
 monkey.patch_all()  # NOQA
 # pylint: disable=wrong-import-position,wrong-import-order
+# ruff: noqa: E402
 import gevent
 import falcon
 import hmac
