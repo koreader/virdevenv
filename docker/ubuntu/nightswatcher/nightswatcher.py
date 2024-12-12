@@ -244,7 +244,7 @@ def is_build_processed(build_id):
         return False
     with open(PROCESSED_BUILDS_FILE, 'r', encoding='utf-8') as f:
         processed_builds = f.read().splitlines()
-    return build_id in processed_builds
+    return str(build_id) in processed_builds
 
 
 def mark_build_as_processed(build_id):
