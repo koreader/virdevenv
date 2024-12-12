@@ -189,7 +189,6 @@ def extract_build(artifact_zip, build):
         sign_apk(tmp_artifact_path)
     shutil.copy2(tmp_artifact_path, download_artifact_path)
 
-    ota_artifact_path = tmp_version_dir + download_artifact
     # point update pointer to the right location
     if build['name'] in ota_link_models:
         if build['name'] == 'build_android':
