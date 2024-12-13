@@ -52,7 +52,7 @@ artifact_re = re.compile(
      r'(?P<platform>[a-z0-9\-]+)-'
      r'(?:(?P<arch>arm|aarch64|x86|i686|x86_64)-?.*-)?'
      r'(?P<version>v[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-(?P<commit_number>[0-9]+))?(?:-g(?P<commit_hash>[0-9a-z]{7,12})_(?P<commit_date>[0-9]{4}-[0-9]{2}-[0-9]{2})?)?)'
-     r'\.(?P<ftype>[A-Za-z]+).*'))
+     r'\.(?P<ftype>[A-Za-z]+(?:\.[a-z]+)?)$'))
 
 def trigger_build():
     repo = 'koreader%2Fnightly-builds'
