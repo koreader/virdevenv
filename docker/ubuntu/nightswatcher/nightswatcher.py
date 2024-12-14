@@ -204,6 +204,8 @@ def extract_build(artifact_zip, build):
             link_file_nightly = OTA_DIR + ('koreader-%s-latest-nightly' % platform)
             link_file = stable is True and link_file_stable or link_file_nightly
 
+            if os.path.exists(OTA_DIR + download_artifact):
+                os.remove(OTA_DIR + download_artifact)
             os.symlink(download_artifact_path, OTA_DIR + download_artifact)
 
             with open(link_file, "w", encoding="utf-8") as f:
