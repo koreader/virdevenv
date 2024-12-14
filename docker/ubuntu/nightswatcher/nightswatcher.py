@@ -125,14 +125,14 @@ def is_stable(commit_number):
 
 
 download_artifact_ext_map = {
-    'build_android': 'apk',
-    'build_android_aarch64': 'apk',
-    'build_android_x86': 'apk',
-    'build_appimage': 'AppImage',
-    'build_debian': 'deb',
-    'build_debian_armhf': 'deb',
-    'build_debian_arm64': 'deb',
-    'build_ubuntutouch': 'click',
+    'build_android': ['apk'],
+    'build_android_aarch64': ['apk'],
+    'build_android_x86': ['apk'],
+    'build_appimage': ['AppImage'],
+    'build_debian': ['deb', 'tar.xz'],
+    'build_debian_armhf': ['deb', 'tar.xz'],
+    'build_debian_arm64': ['deb', 'tar.xz'],
+    'build_ubuntutouch': ['click'],
 }
 
 # names come from GitLab, see https://gitlab.com/koreader/nightly-builds/blob/master/.gitlab-ci.yml
@@ -164,16 +164,18 @@ def extract_build(artifact_zip, build):
         logger.error('Invalid build artifact, missing targz file.')
         return
     download_artifact_ext = download_artifact_ext_map.get(build['name'], 'zip')
-    if download_artifact_ext not in artifact:
-        logger.error('Invalid build artifact, missing %s file. Artifact: %s',
-                     download_artifact_ext, artifact)
+    if not any(ext in artifact for ext in download_artifact_ext):
+        logger.error('Invalid build artifact, missing one of %s files. Artifact: %s', download_artifact_ext, artifact)
         return
 
     # check to see if we already have the build
     version_dir = '%s/%s/' % (stable is True and STABLE_BUILD_DIR or NIGHTLY_BUILD_DIR, version)
 
-    download_artifact = artifact[download_artifact_ext]
-    download_artifact_path = version_dir + download_artifact
+    download_artifacts = [artifact[ext] for ext in download_artifact_ext if ext in artifact]
+    logger.info('Found artifacts for build %s: %s', build['name'], download_artifacts)
+    if not download_artifacts:
+        logger.error('No valid artifacts found for build %s', build['name'])
+        return
 
     if not os.path.exists(version_dir):
         os.mkdir(version_dir)
@@ -184,36 +186,39 @@ def extract_build(artifact_zip, build):
     unzip_cmd = ['unzip', '-n', '-j', '-d', tmp_version_dir, artifact_zip]
     run_cmd(unzip_cmd)
 
-    tmp_artifact_path = tmp_version_dir + download_artifact
-    if build['name'].startswith('build_android'):
-        sign_apk(tmp_artifact_path)
-    shutil.copy2(tmp_artifact_path, download_artifact_path)
+    for download_artifact in download_artifacts:
+        tmp_artifact_path = tmp_version_dir + download_artifact
+        download_artifact_path = version_dir + download_artifact
 
-    # point update pointer to the right location
-    if build['name'] in ota_link_models:
-        if build['name'] == 'build_android':
-            # For historical reasons koreader-android-arm OTA uses koreader-android.
-            platform = 'android'
+        if build['name'].startswith('build_android'):
+            sign_apk(tmp_artifact_path)
+        shutil.copy2(tmp_artifact_path, download_artifact_path)
 
-        link_file_stable = OTA_DIR + ('koreader-%s-latest-stable' % platform)
-        link_file_nightly = OTA_DIR + ('koreader-%s-latest-nightly' % platform)
-        link_file = stable is True and link_file_stable or link_file_nightly
+        # point update pointer to the right location
+        if build['name'] in ota_link_models:
+            if build['name'] == 'build_android':
+                # For historical reasons koreader-android-arm OTA uses koreader-android.
+                platform = 'android'
 
-        os.symlink(download_artifact_path, OTA_DIR + download_artifact)
+            link_file_stable = OTA_DIR + ('koreader-%s-latest-stable' % platform)
+            link_file_nightly = OTA_DIR + ('koreader-%s-latest-nightly' % platform)
+            link_file = stable is True and link_file_stable or link_file_nightly
 
-        with open(link_file, "w", encoding="utf-8") as f:
-            f.write(download_artifact)
+            os.symlink(download_artifact_path, OTA_DIR + download_artifact)
 
-        if stable is True:
-            if os.path.exists(link_file_nightly):
-                os.remove(link_file_nightly)
-            shutil.copy2(link_file, link_file_nightly)
-            if 'android' in build['name']:
-                tmp_android_fdroid_latest_path = tmp_version_dir + 'koreader-android-fdroid-latest'
-                android_fdroid_latest = OTA_DIR + 'koreader-android-fdroid-latest'
-                if os.path.exists(android_fdroid_latest):
-                    os.remove(android_fdroid_latest)
-                shutil.copy2(tmp_android_fdroid_latest_path, android_fdroid_latest)
+            with open(link_file, "w", encoding="utf-8") as f:
+                f.write(download_artifact)
+
+            if stable is True:
+                if os.path.exists(link_file_nightly):
+                    os.remove(link_file_nightly)
+                shutil.copy2(link_file, link_file_nightly)
+                if 'android' in build['name']:
+                    tmp_android_fdroid_latest_path = tmp_version_dir + 'koreader-android-fdroid-latest'
+                    android_fdroid_latest = OTA_DIR + 'koreader-android-fdroid-latest'
+                    if os.path.exists(android_fdroid_latest):
+                        os.remove(android_fdroid_latest)
+                    shutil.copy2(tmp_android_fdroid_latest_path, android_fdroid_latest)
 
     # build zsync metadata
     if build['name'] in ota_zsync_models:
