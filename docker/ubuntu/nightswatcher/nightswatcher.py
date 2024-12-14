@@ -251,6 +251,8 @@ def extract_build(artifact_zip, build):
 
     shutil.rmtree(tmp_version_dir)
 
+    return True
+
 
 def is_build_processed(build_id):
     if not os.path.exists(PROCESSED_BUILDS_FILE):
@@ -291,8 +293,7 @@ def fetch_build(build):
     if retcode != 0:
         logger.error('Failed to download build %s(%s)',
                      build['name'], build['id'])
-    else:
-        extract_build(artifact_zip, build)
+    elif extract_build(artifact_zip, build):
         mark_build_as_processed(build['id'])
     os.remove(artifact_zip)
 
