@@ -163,7 +163,7 @@ def extract_build(artifact_zip, build):
     if build['name'] in ota_zsync_models and 'targz' not in artifact:
         logger.error('Invalid build artifact, missing targz file.')
         return
-    download_artifact_ext = download_artifact_ext_map.get(build['name'], 'zip')
+    download_artifact_ext = download_artifact_ext_map.get(build['name'], ['zip'])
     if not any(ext in artifact for ext in download_artifact_ext):
         logger.error('Invalid build artifact, missing one of %s files. Artifact: %s', download_artifact_ext, artifact)
         return
