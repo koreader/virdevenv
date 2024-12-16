@@ -54,6 +54,14 @@ artifact_re = re.compile(
      r'(?P<version>v[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-(?P<commit_number>[0-9]+))?(?:-g(?P<commit_hash>[0-9a-z]{7,12})_(?P<commit_date>[0-9]{4}-[0-9]{2}-[0-9]{2})?)?)'
      r'\.(?P<ftype>[A-Za-z]+(?:\.[a-z]+)?)$'))
 
+# koreader/koreader-2024.11-70-amd64.deb
+artifact_re_deb = re.compile((
+    r'.*/koreader-'
+    r'(?P<version>[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-(?P<commit_number>[0-9]+))?)-'
+    r'(?:(?P<arch>armhf|arm64|amd64))'
+    r'(?P<ftype>\.deb)$'
+))
+
 def trigger_build():
     repo = 'koreader%2Fnightly-builds'
     trigger_url = 'https://gitlab.com/api/v4/projects/%s/trigger/pipeline' % repo
@@ -108,8 +116,15 @@ def get_artifact_metadata(artifact_zip):
         logger.info('Checking file in zip %s', f)
         m = artifact_re.match(f)
         if not m:
+            m = artifact_re_deb.match(f)
+            if m:
+                platform = 'debian'
+
+        if not m:
             continue
-        platform = m.group("platform")
+
+        if not platform:
+            platform = m.group("platform")
         version = m.group("version")
         commit_number = m.group("commit_number")
         ftype = m.group("ftype")
