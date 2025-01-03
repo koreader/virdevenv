@@ -246,6 +246,14 @@ def extract_build(artifact_zip, build):
         zsync_file_nightly = f"{OTA_DIR}koreader-{platform}-latest-nightly.zsync"
         zsync_file = stable is True and zsync_file_stable or zsync_file_nightly
 
+        # Keep the previous targz file in case someone downloaded the zsync file at an inopportune time.
+        # That should normally only be seconds, but better safe than sorry.
+        nightly_targz_prev = None
+        if os.path.exists(zsync_file_nightly):
+            with open(zsync_file_nightly, 'rb') as f:
+                f.readline()
+                nightly_targz_prev = f.readline().decode('utf-8', errors='ignore').split()[1]
+
         shutil.move(tmp_targz_path, OTA_DIR)
         run_cmd(['zsyncmake', OTA_DIR + artifact['targz'],
                  '-C', '-u', artifact['targz'], '-o', zsync_file])
@@ -267,7 +275,7 @@ def extract_build(artifact_zip, build):
                 nightly_targz = f.readline().decode('utf-8', errors='ignore').split()[1]
 
         for f in os.listdir(OTA_DIR):
-            if f.startswith(f'koreader-{platform}-') and f.endswith('.targz') and f != stable_targz and f != nightly_targz:
+            if f.startswith(f'koreader-{platform}-') and f.endswith('.targz') and f != stable_targz and f != nightly_targz and f != nightly_targz_prev:
                 logger.info(f'Purging old targz: {f}')
                 os.remove(OTA_DIR + f)
 
