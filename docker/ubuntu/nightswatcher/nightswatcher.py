@@ -267,7 +267,7 @@ def extract_build(artifact_zip, build):
                 nightly_targz = f.readline().decode('utf-8', errors='ignore').split()[1]
 
         for f in os.listdir(OTA_DIR):
-            if f.startswith(f'koreader-{platform}') and f.endswith('.targz') and f != stable_targz and f != nightly_targz:
+            if f.startswith(f'koreader-{platform}-') and f.endswith('.targz') and f != stable_targz and f != nightly_targz:
                 logger.info(f'Purging old targz: {f}')
                 os.remove(OTA_DIR + f)
 
