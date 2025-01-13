@@ -4,7 +4,7 @@ Docker is the preferred method for building KOReader without setting up the depe
 
 Normally all of the Docker images should already have been built and pushed to [Docker Hub](https://hub.docker.com/u/koreader), so you only need to pull them.
 
-To mount a local folder in your Docker container, you can use the `-v` flag. Following along from [the main project's document](https://github.com/koreader/koreader/blob/master/doc/Building.md#getting-the-source), you can run a series of commands along these lines:
+To mount a local folder in your Docker container, you can use the `-v` flag. Following along from [the main project's documentation](https://github.com/koreader/koreader/blob/master/doc/Building.md#getting-the-source), you can run a series of commands along these lines:
 ```
 git clone https://github.com/koreader/koreader.git
 docker run -v $(pwd)/koreader:/home/ko/koreader -it koreader/koappimage:latest bash
