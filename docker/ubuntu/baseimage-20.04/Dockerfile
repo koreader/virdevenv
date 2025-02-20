@@ -141,6 +141,7 @@ RUN rm -rf luacov-coveralls-master
 
 # NOTE: SDL2 is also needed for the tests.
 ARG APPIMAGE_DEPS="libsdl2-2.0-0"
+ARG FFI_CDECL_DEPS="gcc-9-plugin-dev"
 # GLib meson build needs distutils.
 ARG GLIB_DEPS="python3-distutils"
 # NOTE: we don't install `gcc-multilib`, as it conflicts with cross-toolchains.
@@ -163,13 +164,14 @@ ARG MISC_TOOLS="\
     openssh-client \
     p7zip-full \
     patch \
-    pkg-config \
+    pkgconf \
     python3 \
     python3-pip \
     zip \
     "
 RUN sudo --preserve-env=DEBIAN_FRONTEND apt-get install --no-install-recommends -y \
     $APPIMAGE_DEPS \
+    $FFI_CDECL_DEPS \
     $GLIB_DEPS \
     $LUAJIT_DEPS \
     $MISC_TOOLS \
