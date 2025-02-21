@@ -1,3 +1,3 @@
 IMAGE = kobase-clang
-VERSION = 0.3.4-20.04
+VERSION = 0.3.5-20.04
 BASE = $(BASEIMAGE)
