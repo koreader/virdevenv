@@ -49,10 +49,15 @@ ifeq (,$$(BASE))
 $$(error $1/settings.mk does not define a BASE)
 endif
 
-.PHONY: $1 $1/ $1/push $1/shell
+.PHONY: $1 $1/ $1/push $1/shell $1/latest
 
 $1 $1/: $1/Dockerfile
 	cat Dockerfile.pre $1/Dockerfile Dockerfile.post | $(strip $(call image_build,$1))
+
+ifeq (docker,$(BUILDER))
+$1/latest:
+	$(BUILDER) buildx imagetools create $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION) --tag $(REGISTRY)/$(USER)/$(IMAGE):latest
+endif
 
 $1/push:
 	$(BUILDER) push $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION)
@@ -60,7 +65,7 @@ $1/push:
 $1/shell:
 	$(BUILDER) run --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION) bash -l
 
-PHONIES += $1 $1/ $1/push $1/shell
+PHONIES += $1 $1/ $1/push $1/shell $1/latest
 
 endef
 
@@ -81,6 +86,7 @@ USAGE
 	make IMAGE            build image
 	make IMAGE/shell      run interactive shell in image
 	make IMAGE/push       push image to registry
+	make IMAGE/lastest    tag image version has latest (docker only)
 	make prune            prune dangling images
 
   VARIABLES:
