@@ -11,6 +11,7 @@ COPY <<EOF /etc/apt/sources.list.d/clang${CLANG_VERSION}.list
 deb http://apt.llvm.org/focal/ llvm-toolchain-focal-${CLANG_VERSION} main
 deb-src http://apt.llvm.org/focal/ llvm-toolchain-focal-${CLANG_VERSION} main
 EOF
+RUN apt-get update -y
 RUN apt-get install -y --no-install-recommends clang-${CLANG_VERSION}
 RUN apt-get remove --auto-remove gcc-9 -y
 RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-${CLANG_VERSION} 380
