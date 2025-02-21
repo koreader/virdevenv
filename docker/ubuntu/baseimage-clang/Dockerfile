@@ -16,5 +16,3 @@ RUN apt-get remove --auto-remove gcc-9 -y
 RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-${CLANG_VERSION} 380
 RUN update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-${CLANG_VERSION} 380
 RUN update-alternatives --install /usr/bin/clang-cpp clang-cpp /usr/bin/clang-cpp-${CLANG_VERSION} 380
-# FIXME: why does fribidi's `CC=clang CXX=clang++ ./configure` still need gcc?
-RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/clang-${CLANG_VERSION} 380
