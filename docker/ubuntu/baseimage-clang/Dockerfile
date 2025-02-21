@@ -4,8 +4,7 @@ RUN apt-get update -y
 RUN apt-get install -y --no-install-recommends gnupg
 
 # Install Clang.
-# NOTE: our glib version must be updated before we can switch to clang >= 15.
-ARG CLANG_VERSION=14
+ARG CLANG_VERSION=20
 RUN wget --progress=dot:giga -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
 COPY <<EOF /etc/apt/sources.list.d/clang${CLANG_VERSION}.list
 deb http://apt.llvm.org/focal/ llvm-toolchain-focal-${CLANG_VERSION} main
