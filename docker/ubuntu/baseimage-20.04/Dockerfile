@@ -23,7 +23,8 @@ RUN apt-get install --no-install-recommends -y \
 COPY baseimage-20.04/bashrc /root/.bashrc
 
 # Add dedicated user.
-RUN useradd -m ko -s /bin/bash
+# NOTE: use the same UID as the one used by Github Actions to avoid permissions issues.
+RUN useradd -m ko -s /bin/bash -u 1001
 RUN usermod -aG sudo ko
 RUN echo 'ko ALL=(ALL:ALL) NOPASSWD:ALL' | EDITOR='tee -a' visudo
 WORKDIR /home/ko
