@@ -1,3 +1,3 @@
-IMAGE = kobase-22.04
-VERSION = 0.3.0
-BASE = phusion/baseimage:jammy-1.0.1
+IMAGE = kobase
+VERSION = 0.4.0-22.04
+BASE = ubuntu:jammy
