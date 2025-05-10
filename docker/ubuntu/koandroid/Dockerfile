@@ -40,10 +40,10 @@ RUN sudo hardlink /opt/android-sdk-linux
 
 # Since we use the host clang compiler provided by the NDK, we do not
 # need gcc-multilib / g++, and only keep some of their dependencies.
-RUN apt-cache depends --important gcc-9-multilib \
+RUN apt-cache depends --important gcc-11-multilib \
   | sed -n '/^ *Depends: \(.*\)$/{s//\1/;/^gcc/d;p}' \
   | xargs sudo apt-mark manual
-RUN sudo apt-get autoremove -y g++ gcc-9-multilib
+RUN sudo apt-get autoremove -y g++ gcc-11-multilib
 # We also don't need SDL2.
 RUN sudo apt-get autoremove -y libsdl2-2.0-0
 
