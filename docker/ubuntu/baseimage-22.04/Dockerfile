@@ -204,7 +204,7 @@ RUN sudo install -m 755 shellcheck /usr/local/bin
 RUN rm shellcheck
 
 # shfmt
-ARG SHFMT_VER="3.8.0"
+ARG SHFMT_VER="3.11.0"
 RUN wget -O shfmt https://github.com/mvdan/sh/releases/download/v${SHFMT_VER}/shfmt_v${SHFMT_VER}_linux_amd64
 RUN sudo install -m 755 shfmt /usr/local/bin
 RUN rm shfmt
