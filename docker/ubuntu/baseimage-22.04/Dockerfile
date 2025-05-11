@@ -176,7 +176,7 @@ RUN sudo ln -sf /usr/include/x86_64-linux-gnu/asm /usr/local/include/asm
 RUN sudo ln -sf /usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0 /usr/lib/x86_64-linux-gnu/libSDL2.so
 
 # ccache
-ARG CCACHE_VER="4.10"
+ARG CCACHE_VER="4.11.3"
 RUN wget -O ccache.tar.xz https://github.com/ccache/ccache/releases/download/v${CCACHE_VER}/ccache-${CCACHE_VER}-linux-x86_64.tar.xz
 RUN tar xf ccache.tar.xz
 RUN sudo make -C ccache-${CCACHE_VER}-linux-x86_64 install
