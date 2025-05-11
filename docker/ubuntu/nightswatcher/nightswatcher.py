@@ -162,6 +162,7 @@ ota_zsync_models = frozenset([
                         'build_kindlehf',
                         'build_kobo', 'build_pocketbook',
                         'build_remarkable',
+                        'build_remarkable_aarch64',
                         'build_sony_prstux'])
 
 
