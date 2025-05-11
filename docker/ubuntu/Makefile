@@ -3,7 +3,7 @@
 
 BUILDER ?= docker
 REGISTRY ?= docker.io
-BASEIMAGE ?= koreader/kobase:0.4.0-22.04
+BASEIMAGE ?= koreader/kobase:0.4.1-22.04
 X_TOOLS_VERSION ?= 2025.05
 
 IMAGES = $(patsubst %/,%,$(dir $(wildcard */Dockerfile)))
