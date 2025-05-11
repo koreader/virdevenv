@@ -17,6 +17,7 @@ RUN apt-get install --no-install-recommends -y \
     sudo \
     unzip \
     wget \
+    zstd \
     ;
 
 # Setup root user.
