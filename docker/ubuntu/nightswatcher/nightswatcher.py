@@ -103,7 +103,8 @@ def sign_apk(apk_path):
 
 def get_artifact_metadata(artifact_zip):
     try:
-        zf = zipfile.ZipFile(artifact_zip)
+        with zipfile.ZipFile(artifact_zip) as zf:
+            namelist = zf.namelist()
     except zipfile.BadZipfile:
         logger.exception('Got invalid zip file: %s', artifact_zip)
         return None, None, None, {}
@@ -112,7 +113,7 @@ def get_artifact_metadata(artifact_zip):
     version = None
     commit_number = None
     artifact = {}
-    for f in zf.namelist():
+    for f in namelist:
         logger.info('Checking file in zip %s', f)
         m = artifact_re.match(f)
         if not m:
@@ -130,7 +131,6 @@ def get_artifact_metadata(artifact_zip):
         ftype = m.group("ftype")
         artifact[ftype] = os.path.basename(f.strip())
 
-    zf.close()
     return platform, version, commit_number, artifact
 
 
@@ -173,16 +173,16 @@ def extract_build(artifact_zip, build):
     if not platform or not artifact_zip:
         logger.error(
             'Invalid build artifact, failed to extract metadata from zipfile.')
-        return
+        return False
 
     # validate artifact_zip
     if build['name'] in ota_zsync_models and 'targz' not in artifact:
         logger.error('Invalid build artifact, missing targz file.')
-        return
+        return False
     download_artifact_ext = download_artifact_ext_map.get(build['name'], ['zip'])
     if not any(ext in artifact for ext in download_artifact_ext):
         logger.error('Invalid build artifact, missing one of %s files. Artifact: %s', download_artifact_ext, artifact)
-        return
+        return False
 
     # check to see if we already have the build
     version_dir = '%s/%s/' % (stable is True and STABLE_BUILD_DIR or NIGHTLY_BUILD_DIR, version)
@@ -191,7 +191,7 @@ def extract_build(artifact_zip, build):
     logger.info('Found artifacts for build %s: %s', build['name'], download_artifacts)
     if not download_artifacts:
         logger.error('No valid artifacts found for build %s', build['name'])
-        return
+        return False
 
     if not os.path.exists(version_dir):
         os.mkdir(version_dir)
@@ -339,6 +339,7 @@ def fetch_build_worker():
         gevent.spawn(fetch_build, build_fetch_queue.get()).join(timeout=60)
 
 
+# pylint: disable=too-few-public-methods
 class PipeLine():
     def on_post(self, req, resp):
         token = req.headers.get('X-GITLAB-TOKEN')
@@ -362,7 +363,7 @@ class PipeLine():
                     'commit message:\n%s',
                     attributes['id'], status, commit['id'], commit['message'])
 
-        if status == 'success' or status == 'failed':
+        if status in ('failed', 'success'):
             # build finished, download as many artifacts as possible
             for build in data['builds']:
                 if not build['name'].startswith('build_'):
