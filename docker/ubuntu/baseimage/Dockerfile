@@ -49,15 +49,15 @@ RUN rm -rf luajit
 # LUAROCKS. {{{
 
 # Install luarocks.
-ARG LUAROCKS_VERSION="3.11.0"
-RUN wget https://luarocks.github.io/luarocks/releases/luarocks-${LUAROCKS_VERSION}.tar.gz
-RUN tar xvf luarocks-${LUAROCKS_VERSION}.tar.gz
-WORKDIR luarocks-${LUAROCKS_VERSION}
+ARG LUAROCKS_VER="3.12.2"
+RUN wget https://luarocks.github.io/luarocks/releases/luarocks-${LUAROCKS_VER}.tar.gz
+RUN tar xvf luarocks-${LUAROCKS_VER}.tar.gz
+WORKDIR luarocks-${LUAROCKS_VER}
 RUN ./configure
 RUN make
 RUN sudo make install
 WORKDIR ..
-RUN rm -rf luarocks-${LUAROCKS_VERSION}*
+RUN rm -rf luarocks-${LUAROCKS_VER}*
 # Configure.
 RUN sudo tee -a /usr/local/etc/luarocks/config-5.1.lua <<\EOF
 wrap_bin_scripts = false
