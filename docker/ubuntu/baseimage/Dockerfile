@@ -69,10 +69,12 @@ EOF
 # LUA PACKAGES. {{{
 
 # lfs
-RUN sudo luarocks install luafilesystem
+ARG LUAFILESYSTEM_VER="1.8.0-1"
+RUN sudo luarocks install luafilesystem ${LUAFILESYSTEM_VER}
 
 # luacheck
-RUN sudo luarocks install luacheck
+ARG LUACHECK_VER="1.2.0-1"
+RUN sudo luarocks install luacheck ${LUACHECK_VER}
 RUN sudo sed -i 's/ lua$/ luajit/' $(which luacheck)
 
 # lanes (for parallel luacheck)
@@ -104,17 +106,16 @@ WORKDIR ..
 RUN sudo rm -rf lanes-${LANES_VER}
 
 # ldoc
-RUN sudo luarocks install ldoc
+ARG LDOC_VER="1.5.0-1"
+RUN sudo luarocks install ldoc ${LDOC_VER}
 
 # luacov
-RUN sudo luarocks install luacov
-RUN wget https://github.com/moteus/luacov-coveralls/archive/refs/heads/master.zip
-RUN unzip master.zip
-RUN rm master.zip
-WORKDIR luacov-coveralls-master
-RUN sudo luarocks make rockspecs/luacov-coveralls-scm-0.rockspec
-WORKDIR ..
-RUN rm -rf luacov-coveralls-master
+ARG LUACOV_VER="0.16.0-1"
+RUN sudo luarocks install luacov ${LUACOV_VER}
+
+# luacov-coveralls
+ARG LUACOV_COVERALLS_VER="0.2.3-1"
+RUN sudo luarocks install luacov-coveralls ${LUACOV_COVERALLS_VER}
 
 # }}}
 
