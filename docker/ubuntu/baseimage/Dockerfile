@@ -99,7 +99,7 @@ index 2464d03..44357cb 100644
 EOF
 RUN sudo luarocks make lanes-${LANES_VER}-0.rockspec
 # Ensure lanes module is detected by luacheck.
-RUN luacheck --version | grep "^LuaLanes: ${LANES_VERSION}"
+RUN luacheck --version | grep "^LuaLanes: ${LANES_VER}"
 WORKDIR ..
 RUN sudo rm -rf lanes-${LANES_VER}
 
