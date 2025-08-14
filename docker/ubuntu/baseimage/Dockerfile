@@ -191,7 +191,7 @@ RUN sudo install -m755 ninjatracing /usr/local/bin/
 RUN rm ninjatracing*
 
 # shellcheck
-ARG SHELLCHECK_VERSION="0.10.0"
+ARG SHELLCHECK_VERSION="0.11.0"
 RUN wget -O - https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz | tar --strip-components=1 -xJf - --no-anchored shellcheck
 RUN sudo install -m 755 shellcheck /usr/local/bin
 RUN rm shellcheck
