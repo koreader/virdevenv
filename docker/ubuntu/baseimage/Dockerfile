@@ -71,12 +71,6 @@ EOF
 # lfs
 RUN sudo luarocks install luafilesystem
 
-# luasec.
-RUN sudo apt-get install -y --no-install-recommends libssl-dev
-# luasec doesn't automatically detect 64-bit libs
-RUN sudo luarocks install luasec OPENSSL_LIBDIR=/usr/lib/x86_64-linux-gnu
-RUN sudo apt-get remove -y --auto-remove libssl-dev
-
 # luacheck
 RUN sudo luarocks install luacheck
 RUN sudo sed -i 's/ lua$/ luajit/' $(which luacheck)
