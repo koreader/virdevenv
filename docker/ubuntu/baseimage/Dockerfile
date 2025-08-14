@@ -146,6 +146,7 @@ ARG MISC_TOOLS="\
     openssh-client \
     p7zip-full \
     patch \
+    pigz \
     pkgconf \
     python3 \
     python3-pip \
