@@ -34,12 +34,13 @@ USER ko
 
 # LUAJIT. {{{
 
-ARG LUAJIT_VERSION="2.1.0-beta3"
-RUN git clone --branch v${LUAJIT_VERSION} --depth 1 https://github.com/LuaJIT/LuaJIT.git luajit
+ARG LUAJIT_VER="871db2c84ecefd70a850e03a6c340214a81739f0" # 2.1.1753364724
+RUN git clone --branch v2.1 --depth 1 https://github.com/LuaJIT/LuaJIT.git luajit
 WORKDIR luajit
+RUN git fetch --depth 1 origin +${LUAJIT_VER}:refs/remotes/origin/${LUAJIT_VER}
+RUN git checkout ${LUAJIT_VER}
 RUN make -j"$(nproc)" amalg
 RUN sudo make install
-RUN test -x /usr/local/bin/luajit || sudo ln -sv luajit-${LUAJIT_VERSION} /usr/local/bin/luajit
 RUN luajit -v
 WORKDIR ..
 RUN rm -rf luajit
