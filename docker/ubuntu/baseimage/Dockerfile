@@ -184,7 +184,7 @@ ARG MESON_VER="1.4.1"
 RUN sudo python3 -m pip install meson==${MESON_VER}
 
 # ninjatracing
-ARG NINJATRACING_VER="a669e3644cf22b29cbece31dbed2cfbf34e5f48e"
+ARG NINJATRACING_VER="084212eaf68f25c70579958a2ed67fb4ec2a9ca4"
 RUN wget -O ninjatracing.zip https://github.com/nico/ninjatracing/archive/${NINJATRACING_VER}.zip
 RUN unzip -j ninjatracing.zip '*/ninjatracing'
 RUN sudo install -m755 ninjatracing /usr/local/bin/
