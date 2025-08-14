@@ -71,9 +71,6 @@ EOF
 # lfs
 RUN sudo luarocks install luafilesystem
 
-# busted
-RUN sudo luarocks install busted
-
 # luasec.
 RUN sudo apt-get install -y --no-install-recommends libssl-dev
 # luasec doesn't automatically detect 64-bit libs
