@@ -166,6 +166,14 @@ ota_zsync_models = frozenset([
                         'build_sony_prstux'])
 
 
+def extract_zsync_target(zsync_file):
+    """ Extract target filename from zsync file header. """
+    with open(zsync_file, 'rb') as f:
+        f.readline()
+        line = f.readline().decode('utf-8', errors='ignore')
+        assert line.startswith('Filename:')
+        return line.split()[1]
+
 def extract_build(artifact_zip, build):
     # caller is responsible for removing artifact_zip
     platform, version, commit_number, artifact = get_artifact_metadata(artifact_zip)
@@ -251,9 +259,7 @@ def extract_build(artifact_zip, build):
         # That should normally only be seconds, but better safe than sorry.
         nightly_targz_prev = None
         if os.path.exists(zsync_file_nightly):
-            with open(zsync_file_nightly, 'rb') as f:
-                f.readline()
-                nightly_targz_prev = f.readline().decode('utf-8', errors='ignore').split()[1]
+            nightly_targz_prev = extract_zsync_target(zsync_file_nightly)
 
         shutil.move(tmp_targz_path, OTA_DIR)
         run_cmd(['zsyncmake', OTA_DIR + artifact['targz'],
@@ -267,13 +273,9 @@ def extract_build(artifact_zip, build):
         stable_targz = None
         nightly_targz = None
         if os.path.exists(zsync_file_stable):
-            with open(zsync_file_stable, 'rb') as f:
-                f.readline()
-                stable_targz = f.readline().decode('utf-8', errors='ignore').split()[1]
+            stable_targz = extract_zsync_target(zsync_file_stable)
         if os.path.exists(zsync_file_nightly):
-            with open(zsync_file_nightly, 'rb') as f:
-                f.readline()
-                nightly_targz = f.readline().decode('utf-8', errors='ignore').split()[1]
+            nightly_targz = extract_zsync_target(zsync_file_nightly)
 
         for f in os.listdir(OTA_DIR):
             if f.startswith(f'koreader-{platform}-v') and f.endswith('.targz') and f != stable_targz and f != nightly_targz and f != nightly_targz_prev:
