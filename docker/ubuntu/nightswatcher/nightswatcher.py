@@ -84,7 +84,7 @@ def trigger_build():
 
 def run_cmd(cmd):
     logger.info('Running command: %s', ' '.join(cmd))
-    return gevent.subprocess.call(cmd)
+    return gevent.subprocess.check_call(cmd)
 
 
 def sign_apk(apk_path):
