@@ -6,6 +6,7 @@ from gevent import queue
 monkey.patch_all()  # NOQA
 # pylint: disable=wrong-import-position,wrong-import-order
 # ruff: noqa: E402
+import collections
 import gevent
 import falcon
 import hmac
@@ -139,31 +140,31 @@ def is_stable(commit_number):
     return commit_number is None
 
 
-download_artifact_ext_map = {
-    'build_android': ['apk'],
-    'build_android_aarch64': ['apk'],
-    'build_android_x86': ['apk'],
-    'build_appimage': ['AppImage'],
-    'build_debian': ['deb', 'tar.xz'],
-    'build_debian_armhf': ['deb', 'tar.xz'],
-    'build_debian_arm64': ['deb', 'tar.xz'],
-    'build_ubuntutouch': ['click'],
-}
+download_artifact_ext_map = collections.defaultdict(lambda: ('zip',), {
+    'build_android': ('apk',),
+    'build_android_aarch64': ('apk',),
+    'build_android_x86': ('apk',),
+    'build_appimage': ('AppImage',),
+    'build_debian': ('deb', 'tar.xz'),
+    'build_debian_armhf': ('deb', 'tar.xz'),
+    'build_debian_arm64': ('deb', 'tar.xz'),
+    'build_ubuntutouch': ('click',),
+})
 
 # names come from GitLab, see https://gitlab.com/koreader/nightly-builds/blob/master/.gitlab-ci.yml
 ota_link_models = frozenset([
-                        'build_android', 'build_android_aarch64', 'build_android_x86',
-                        'build_appimage',
-                        'build_debian', 'build_debian_armhf', 'build_debian_arm64',])
-ota_zsync_models = frozenset([
-                        'build_cervantes',
-                        'build_kindle', 'build_legacy_kindle',
-                        'build_kindle5', 'build_kindlepw2',
-                        'build_kindlehf',
-                        'build_kobo', 'build_pocketbook',
-                        'build_remarkable',
-                        'build_remarkable_aarch64',
-                        'build_sony_prstux'])
+    'build_android', 'build_android_aarch64', 'build_android_x86',
+    'build_appimage',
+    'build_debian', 'build_debian_armhf', 'build_debian_arm64',])
+ota_sync_models = frozenset([
+    'build_cervantes',
+    'build_kindle', 'build_legacy_kindle',
+    'build_kindle5', 'build_kindlepw2',
+    'build_kindlehf',
+    'build_kobo', 'build_pocketbook',
+    'build_remarkable',
+    'build_remarkable_aarch64',
+    'build_sony_prstux'])
 
 
 def extract_zsync_target(zsync_file):
@@ -184,18 +185,18 @@ def extract_build(artifact_zip, build):
         return False
 
     # validate artifact_zip
-    if build['name'] in ota_zsync_models and 'targz' not in artifact:
-        logger.error('Invalid build artifact, missing targz file.')
-        return False
-    download_artifact_ext = download_artifact_ext_map.get(build['name'], ['zip'])
-    if not any(ext in artifact for ext in download_artifact_ext):
-        logger.error('Invalid build artifact, missing one of %s files. Artifact: %s', download_artifact_ext, artifact)
+    download_artifact_ext = set(download_artifact_ext_map[build['name']])
+    if build['name'] in ota_sync_models:
+        download_artifact_ext.add('targz')
+    missing = download_artifact_ext - set(artifact.keys())
+    if missing:
+        logger.error('Invalid build artifact, missing one of %s files. Artifact: %s, missing: %s', platform, artifact, sorted(missing))
         return False
 
     # check to see if we already have the build
     version_dir = '%s/%s/' % (stable is True and STABLE_BUILD_DIR or NIGHTLY_BUILD_DIR, version)
 
-    download_artifacts = [artifact[ext] for ext in download_artifact_ext if ext in artifact]
+    download_artifacts = [artifact[ext] for ext in download_artifact_ext]
     logger.info('Found artifacts for build %s: %s', build['name'], download_artifacts)
     if not download_artifacts:
         logger.error('No valid artifacts found for build %s', build['name'])
@@ -247,7 +248,7 @@ def extract_build(artifact_zip, build):
                     shutil.copy2(tmp_android_fdroid_latest_path, android_fdroid_latest)
 
     # build zsync metadata
-    if build['name'] in ota_zsync_models:
+    if build['name'] in ota_sync_models:
         logger.info('Building zsync metadata for %s...', platform)
         tmp_targz_path = tmp_version_dir + artifact['targz']
         # FIXME: check version in latest-nightly and skip old versions
