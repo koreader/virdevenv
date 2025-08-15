@@ -381,7 +381,6 @@ class PipeLine():
 def init():
     gevent.spawn(fetch_build_worker)
     gevent.spawn(trigger_build)
-    # TODO: purge old nightly targz
 
 
 api = falcon.App()
