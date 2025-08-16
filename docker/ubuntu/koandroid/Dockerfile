@@ -66,7 +66,7 @@ RUN sudo rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Setup shell environment.
 ARG JDK NDK
-RUN sudo tee -a ~ko/.bashrc /root/.bashrc <<EOF
+RUN sudo tee -a ~/.bashrc /root/.bashrc <<EOF
 export JAVA_HOME='/usr/lib/jvm/java-$JDK-openjdk-amd64'
 export ANDROID_NDK_HOME='/opt/$NDK'
 export ANDROID_HOME='/opt/android-sdk-linux'

@@ -25,12 +25,12 @@ COPY baseimage/bashrc /root/.bashrc
 
 # Add dedicated user.
 # NOTE: use the same UID as the one used by Github Actions to avoid permissions issues.
-RUN useradd -m ko -s /bin/bash -u 1001
-RUN usermod -aG sudo ko
-RUN echo 'ko ALL=(ALL:ALL) NOPASSWD:ALL' | EDITOR='tee -a' visudo
-WORKDIR /home/ko
-COPY --chown=ko baseimage/bashrc .bashrc
-USER ko
+RUN useradd -m ${USER} -s /bin/bash -u 1001
+RUN usermod -aG sudo ${USER}
+RUN echo "${USER} ALL=(ALL:ALL) NOPASSWD:ALL" | EDITOR='tee -a' visudo
+WORKDIR ${WORKDIR}
+COPY --chown=${USER} baseimage/bashrc .bashrc
+USER ${USER}
 
 # LUAJIT. {{{
 
@@ -210,7 +210,7 @@ RUN rm shfmt
 # Cleanup.
 RUN sudo apt-get remove -y --auto-remove python3-pip
 RUN sudo rm -rf \
-    ~ko/.cache \
+    ~${USER}/.cache \
     ~root/.cache \
     /usr/local/lib/luarocks/rocks-5.1/*/*/docs \
     /usr/share/cmake-*/Help \

@@ -1,7 +1,0 @@
-USER root
-RUN apt-get clean
-RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-FROM scratch AS final
-COPY --from=build / /
-USER ko
-WORKDIR /home/ko
