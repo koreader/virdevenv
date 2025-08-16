@@ -102,6 +102,9 @@ endif
 $1 $1/: build/$1.dockerfile
 	$(strip $(call image_build,$1)) $$< .
 
+$1/inspect:
+	$(BUILDER) image inspect $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION) | jq --sort-keys
+
 ifeq (docker,$(BUILDER))
 $1/latest:
 	$(BUILDER) buildx imagetools create $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION) --tag $(REGISTRY)/$(USER)/$(IMAGE):latest
@@ -110,10 +113,13 @@ endif
 $1/push:
 	$(BUILDER) push $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION)
 
+$1/run:
+	$(BUILDER) run --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION)
+
 $1/shell:
 	$(BUILDER) run --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION) $(IMAGE_SHELL)
 
-PHONIES += $1 $1/ $1/push $1/shell $1/latest build/$1.dockerfile
+PHONIES += $1 $1/ $1/inspect $1/push $1/run $1/shell $1/latest build/$1.dockerfile
 
 endef
 
@@ -129,6 +135,8 @@ endef
 define USAGE
 TARGETS:
 	make IMAGE            build image
+	make IMAGE/inspect    inspect image
+	make IMAGE/run        run image
 	make IMAGE/shell      run interactive shell in image
 	make IMAGE/push       push image to registry
 	make IMAGE/lastest    tag image version has latest (docker only)
