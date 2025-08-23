@@ -5,7 +5,14 @@ DEFAULT_IMAGE_WORKDIR = /home/$(IMAGE_USER)
 
 define DEFAULT_IMAGE_POST_CLEANUP
 RUN apt-get clean
-RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN rm -rf \
+	/tmp/* \
+	/usr/share/doc/ \
+	/usr/share/fonts/ \
+	/var/cache/* \
+	/var/lib/apt/lists/* \
+	/var/tmp/* \
+	;
 endef
 
 X_TOOLS_VERSION = 2025.05
