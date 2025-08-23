@@ -6,10 +6,6 @@ DRY_RUN := $(findstring n,$(firstword -$(MAKEFLAGS)))
 BUILDER ?= docker
 REGISTRY ?= docker.io
 
-IMAGE_SHELL ?= bash -l
-IMAGE_USER ?= ko
-IMAGE_WORKDIR ?= /home/$(IMAGE_USER)
-
 define DOCKERFILE
 # Automatically generated, do not edit!
 
@@ -30,6 +26,7 @@ $(file <$1)
 
 # POST {{{
 
+USER 0
 $(IMAGE_POST_CLEANUP)
 FROM scratch AS final
 COPY --from=build / /
@@ -68,7 +65,7 @@ endef
 
 define image_build
 	$($(BUILDER)_build)
-	--build-arg REGISTRY=$(REGISTRY) --build-arg BASE=$(BASE)
+	--build-arg REGISTRY=$(REGISTRY) --build-arg BASE=$(IMAGE_BASE)
 	--build-arg USER=$(IMAGE_USER) --build-arg WORKDIR=$(IMAGE_WORKDIR)
 	$(patsubst %,--build-arg %,$(strip $(BUILD_ARGS)))
 	-t $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION)
@@ -82,13 +79,13 @@ to_json_array = [$(patsubst %,"%"$(comma),$(wordlist 2,$(words $1),1 $1)) "$(las
 define image_rules
 $(eval IMAGE := $1)
 $(eval VERSION := )
-$(eval BASE := )
-$(eval BUILD_ARGS := )
-$(eval IMAGE_CMD := )
+$(foreach v,BUILD_ARGS IMAGE_BASE IMAGE_CMD IMAGE_POST_CLEANUP IMAGE_SHELL IMAGE_USER IMAGE_WORKDIR,
+$(eval $v := $$(DEFAULT_$v))
+)
 $(eval include $1/settings.mk)
-$(foreach v,BASE VERSION,
+$(foreach v,IMAGE_BASE IMAGE_SHELL VERSION,
 ifeq (,$$($v))
-$$(error $1/settings.mk does not define $v)
+$$(error $1: $v not defined)
 endif
 )
 
@@ -102,6 +99,9 @@ endif
 $1 $1/: build/$1.dockerfile
 	$(strip $(call image_build,$1)) $$< .
 
+$1/inspect:
+	$(BUILDER) image inspect $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION) | jq --sort-keys
+
 ifeq (docker,$(BUILDER))
 $1/latest:
 	$(BUILDER) buildx imagetools create $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION) --tag $(REGISTRY)/$(USER)/$(IMAGE):latest
@@ -110,10 +110,13 @@ endif
 $1/push:
 	$(BUILDER) push $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION)
 
+$1/run:
+	$(BUILDER) run --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION)
+
 $1/shell:
 	$(BUILDER) run --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION) $(IMAGE_SHELL)
 
-PHONIES += $1 $1/ $1/push $1/shell $1/latest build/$1.dockerfile
+PHONIES += $1 $1/ $1/inspect $1/push $1/run $1/shell $1/latest build/$1.dockerfile
 
 endef
 
@@ -129,6 +132,8 @@ endef
 define USAGE
 TARGETS:
 	make IMAGE            build image
+	make IMAGE/inspect    inspect image
+	make IMAGE/run        run image
 	make IMAGE/shell      run interactive shell in image
 	make IMAGE/push       push image to registry
 	make IMAGE/lastest    tag image version has latest (docker only)
@@ -137,8 +142,6 @@ TARGETS:
 VARIABLES:
 	USER                  repository name (e.g. koreader, default: $(USER))
 	REGISTRY              remote registry to push too (default: $(REGISTRY))
-	BASEIMAGE             default base image (default: $(BASEIMAGE))
-$(USAGE_EXTRA)
 
 IMAGES:$(foreach i,$(IMAGES),$(newline)	$(i))
 endef
