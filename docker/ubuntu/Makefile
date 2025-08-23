@@ -1,13 +1,13 @@
-BASEIMAGE ?= koreader/kobase:0.4.2-22.04
-X_TOOLS_VERSION ?= 2025.05
+DEFAULT_IMAGE_BASE    = koreader/kobase:0.4.2-22.04
+DEFAULT_IMAGE_SHELL   = bash -l
+DEFAULT_IMAGE_USER    = ko
+DEFAULT_IMAGE_WORKDIR = /home/$(IMAGE_USER)
 
-define USAGE_EXTRA
-	X_TOOLS_VERSION       x-tools version (default: $(X_TOOLS_VERSION))
+define DEFAULT_IMAGE_POST_CLEANUP
+RUN apt-get clean
+RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 endef
 
-define IMAGE_POST_CLEANUP
-RUN sudo apt-get clean
-RUN sudo rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-endef
+X_TOOLS_VERSION = 2025.05
 
 include ../rules.mk
