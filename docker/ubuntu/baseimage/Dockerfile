@@ -60,7 +60,7 @@ RUN sudo make install
 WORKDIR ..
 RUN rm -rf luarocks-${LUAROCKS_VER}*
 # Configure.
-RUN sudo tee -a /usr/local/etc/luarocks/config-5.1.lua <<\EOF
+RUN sudo tee -a /usr/local/etc/luarocks/config-5.1.lua <<'EOF'
 wrap_bin_scripts = false
 EOF
 
@@ -84,7 +84,7 @@ RUN tar -xf v${LANES_VER}.tar.gz
 RUN rm v${LANES_VER}.tar.gz
 WORKDIR lanes-${LANES_VER}
 # Remove `pthread_create` root specific setting (unsupported in docker).
-RUN patch -p1 <<\EOF
+RUN patch -p1 <<'EOF'
 diff --git a/src/threading.c b/src/threading.c
 index 2464d03..44357cb 100644
 --- a/src/threading.c
