@@ -5,6 +5,7 @@ DRY_RUN := $(findstring n,$(firstword -$(MAKEFLAGS)))
 
 BUILDER ?= docker
 REGISTRY ?= docker.io
+PLATFORM ?=
 
 define DOCKERFILE
 # Automatically generated, do not edit!
@@ -65,6 +66,7 @@ endef
 
 define image_build
 	$($(BUILDER)_build)
+	$(if $(PLATFORM),--platform $(PLATFORM))
 	--build-arg REGISTRY=$(REGISTRY) --build-arg BASE=$(IMAGE_BASE)
 	--build-arg USER=$(IMAGE_USER) --build-arg WORKDIR=$(IMAGE_WORKDIR)
 	$(patsubst %,--build-arg %,$(strip $(BUILD_ARGS)))
@@ -142,6 +144,7 @@ TARGETS:
 VARIABLES:
 	USER                  repository name (e.g. koreader, default: $(USER))
 	REGISTRY              remote registry to push too (default: $(REGISTRY))
+	PLATFORM              platform to build the image for (default: current system)
 
 IMAGES:$(foreach i,$(IMAGES),$(newline)	$(i))
 endef
