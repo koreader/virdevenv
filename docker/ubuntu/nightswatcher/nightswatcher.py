@@ -165,7 +165,14 @@ ota_sync_models = frozenset([
     'build_remarkable',
     'build_remarkable_aarch64',
     'build_sony_prstux'])
+ota_sync_manifest = collections.defaultdict(lambda: 'koreader/ota/package.index', {
+    'pocketbook': 'applications/koreader/ota/package.index',
+})
 
+
+def extract_kotasync_target(kotasync_file):
+    """ Extract target filename from kotasync manifest. """
+    return ujson.loads(gevent.subprocess.check_output(('zstd', '-dcf', kotasync_file)))['filename']
 
 def extract_zsync_target(zsync_file):
     """ Extract target filename from zsync file header. """
@@ -187,6 +194,7 @@ def extract_build(artifact_zip, build):
     # validate artifact_zip
     download_artifact_ext = set(download_artifact_ext_map[build['name']])
     if build['name'] in ota_sync_models:
+        download_artifact_ext.add('tar.xz')
         download_artifact_ext.add('targz')
     missing = download_artifact_ext - set(artifact.keys())
     if missing:
@@ -247,11 +255,52 @@ def extract_build(artifact_zip, build):
                         os.remove(android_fdroid_latest)
                     shutil.copy2(tmp_android_fdroid_latest_path, android_fdroid_latest)
 
+    # build kotasync files
+    if build['name'] in ota_sync_models:
+        logger.info('Building kotasync files for %s...', platform)
+        tmp_txz_path = tmp_version_dir + artifact['tar.xz']
+        kotasync_file_stable = f"{OTA_DIR}koreader-{platform}-latest-stable.kotasync"
+        kotasync_file_nightly = f"{OTA_DIR}koreader-{platform}-latest-nightly.kotasync"
+        kotasync_file = stable is True and kotasync_file_stable or kotasync_file_nightly
+
+        # Keep the previous tar.xz file in case someone downloaded the kotasync
+        # file at an inopportune time.  That should normally only be seconds,
+        # but better safe than sorry.
+        nightly_txz_prev = None
+        if os.path.exists(kotasync_file_nightly):
+            nightly_txz_prev = extract_kotasync_target(kotasync_file_nightly)
+
+        shutil.move(tmp_txz_path, OTA_DIR)
+        cmd = [
+            'kotasync', 'make',
+            '--manifest', ota_sync_manifest[platform],
+        ]
+        if os.path.exists(kotasync_file_nightly):
+            cmd.extend(('--reorder', kotasync_file_nightly))
+        cmd.extend((OTA_DIR + artifact['tar.xz'], kotasync_file))
+        run_cmd(cmd)
+
+        if stable is True:
+            shutil.copy2(kotasync_file, kotasync_file_nightly)
+
+        # Find the new tar.xz file by reading the kotasync file, and then purge
+        # older files.
+        stable_txz = None
+        nightly_txz = None
+        if os.path.exists(kotasync_file_stable):
+            stable_txz = extract_kotasync_target(kotasync_file_stable)
+        if os.path.exists(kotasync_file_nightly):
+            nightly_txz = extract_kotasync_target(kotasync_file_nightly)
+
+        for f in os.listdir(OTA_DIR):
+            if f.startswith(f'koreader-{platform}-v') and f.endswith('.tar.xz') and f not in (stable_txz, nightly_txz, nightly_txz_prev):
+                logger.info(f'Purging old tar.xz: {f}')
+                os.remove(OTA_DIR + f)
+
     # build zsync metadata
     if build['name'] in ota_sync_models:
         logger.info('Building zsync metadata for %s...', platform)
         tmp_targz_path = tmp_version_dir + artifact['targz']
-        # FIXME: check version in latest-nightly and skip old versions
         zsync_file_stable = f"{OTA_DIR}koreader-{platform}-latest-stable.zsync"
         zsync_file_nightly = f"{OTA_DIR}koreader-{platform}-latest-nightly.zsync"
         zsync_file = stable is True and zsync_file_stable or zsync_file_nightly
@@ -279,7 +328,7 @@ def extract_build(artifact_zip, build):
             nightly_targz = extract_zsync_target(zsync_file_nightly)
 
         for f in os.listdir(OTA_DIR):
-            if f.startswith(f'koreader-{platform}-v') and f.endswith('.targz') and f != stable_targz and f != nightly_targz and f != nightly_targz_prev:
+            if f.startswith(f'koreader-{platform}-v') and f.endswith('.targz') and f not in (stable_targz, nightly_targz, nightly_targz_prev):
                 logger.info(f'Purging old targz: {f}')
                 os.remove(OTA_DIR + f)
 

@@ -21,6 +21,35 @@ EOF
 RUN ln -snf /opt/uber-apk-signer/uber-apk-signer /usr/local/bin/
 RUN rm uber-apk-signer.jar
 
+# Install kotasync.
+ARG KOTASYNC_BUILD_DEPS="\
+    cmake \
+    g++ \
+    git \
+    make \
+    meson \
+    ninja-build \
+    patch \
+"
+ARG KOTASYNC_DEPS="\
+    liblzma5 \
+    libxxhash0 \
+    libzstd1 \
+    lua-dkjson \
+    lua-filesystem \
+    lua-socket \
+"
+RUN apt install --no-install-recommends -y ${KOTASYNC_BUILD_DEPS} ${KOTASYNC_DEPS}
+RUN git clone --branch pr/new_ota --depth 1 https://github.com/benoit-pierre/koreader-base.git
+WORKDIR koreader-base
+RUN make -j"$(nproc)" CI=true fetchthirdparty
+RUN make -j"$(nproc)" KODEBUG= OUTPUT_DIR=build kotasync
+RUN install -m755 ./build/kotasync /usr/local/bin/
+WORKDIR ..
+RUN rm -rf koreader-base
+RUN apt remove --autoremove -y ${KOTASYNC_BUILD_DEPS}
+RUN ln -s $(gcc -dumpmachine)/lua /usr/lib/lua
+
 # Install nightswatcher's other runtime dependencies.
 # FIXME: replace single `requests` use in nightswatcher by a call to curl.
 RUN apt install --no-install-recommends -y \
