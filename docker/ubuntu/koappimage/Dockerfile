@@ -6,6 +6,7 @@ RUN apt-get install -y --no-install-recommends libsndio7.0 libx11-dev
 # SDL2 dependencies.
 RUN apt-get install -y --no-install-recommends \
     libdbus-1-dev \
+    libdecor-0-dev \
     libegl1-mesa-dev \
     libgl1-mesa-dev \
     libgles2-mesa-dev \
