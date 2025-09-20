@@ -73,6 +73,7 @@ define image_build
 	--build-arg USER=$(IMAGE_USER) --build-arg WORKDIR=$(IMAGE_WORKDIR)
 	$(patsubst %,--build-arg %,$(strip $(BUILD_ARGS)))
 	-t $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION)
+	--progress plain
 	--file
 endef
 
