@@ -145,6 +145,7 @@ download_artifact_ext_map = collections.defaultdict(lambda: ('zip',), {
     'build_android_aarch64': ('apk',),
     'build_android_x86': ('apk',),
     'build_appimage': ('AppImage',),
+    'build_appimage_aarch64': ('AppImage',),
     'build_debian': ('deb', 'tar.xz'),
     'build_debian_armhf': ('deb', 'tar.xz'),
     'build_debian_arm64': ('deb', 'tar.xz'),
@@ -154,7 +155,7 @@ download_artifact_ext_map = collections.defaultdict(lambda: ('zip',), {
 # names come from GitLab, see https://gitlab.com/koreader/nightly-builds/blob/master/.gitlab-ci.yml
 ota_link_models = frozenset([
     'build_android', 'build_android_aarch64', 'build_android_x86',
-    'build_appimage',
+    'build_appimage', 'build_appimage_aarch64',
     'build_debian', 'build_debian_armhf', 'build_debian_arm64',])
 ota_sync_models = frozenset([
     'build_cervantes',
