@@ -1,4 +1,4 @@
-DEFAULT_IMAGE_BASE    = koreader/kobase:0.4.2-22.04
+DEFAULT_IMAGE_BASE    = koreader/kobase:0.5.0-22.04
 DEFAULT_IMAGE_SHELL   = bash -l
 DEFAULT_IMAGE_USER    = ko
 DEFAULT_IMAGE_WORKDIR = /home/$(IMAGE_USER)
