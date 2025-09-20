@@ -1,4 +1,4 @@
 IMAGE = kobase
-VERSION = 0.4.2-22.04
+VERSION = 0.5.0-22.04
 
 IMAGE_BASE = ubuntu:jammy
