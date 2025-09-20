@@ -91,11 +91,13 @@ $$(error $1: $v not defined)
 endif
 )
 
+$1_DOCKERFILE := $$(call DOCKERFILE,$1/Dockerfile)
+
 build/$1.dockerfile: | build/
 ifneq (,$$(DRY_RUN))
-	$$(info cat >$$@ <<'DOCKERFILE_EOF'$$(newline)$$(call DOCKERFILE,$1/Dockerfile)$$(newline)DOCKERFILE_EOF)
+	$$(info cat >$$@ <<'DOCKERFILE_EOF'$$(newline)$$($1_DOCKERFILE)$$(newline)DOCKERFILE_EOF)
 else
-	$$(file >$$@,$$(call DOCKERFILE,$1/Dockerfile))
+	$$(file >$$@,$$($1_DOCKERFILE))
 endif
 
 $1 $1/: build/$1.dockerfile
