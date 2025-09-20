@@ -64,9 +64,11 @@ endef
 
 # Image rules. {{{
 
+platform_arg = $(if $(PLATFORM),--platform $(PLATFORM))
+
 define image_build
 	$($(BUILDER)_build)
-	$(if $(PLATFORM),--platform $(PLATFORM))
+	$(platform_arg)
 	--build-arg REGISTRY=$(REGISTRY) --build-arg BASE=$(IMAGE_BASE)
 	--build-arg USER=$(IMAGE_USER) --build-arg WORKDIR=$(IMAGE_WORKDIR)
 	$(patsubst %,--build-arg %,$(strip $(BUILD_ARGS)))
@@ -104,7 +106,7 @@ $1 $1/: build/$1.dockerfile
 	$(strip $(call image_build,$1)) $$< .
 
 $1/inspect:
-	$(BUILDER) image inspect $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION) | jq --sort-keys
+	$(BUILDER) image inspect $(platform_arg) $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION) | jq --sort-keys
 
 ifeq (docker,$(BUILDER))
 $1/latest:
@@ -112,13 +114,13 @@ $1/latest:
 endif
 
 $1/push:
-	$(BUILDER) push $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION)
+	$(BUILDER) push $(platform_arg) $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION)
 
 $1/run:
-	$(BUILDER) run --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION)
+	$(BUILDER) run $(platform_arg) --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION)
 
 $1/shell:
-	$(BUILDER) run --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION) $(IMAGE_SHELL)
+	$(BUILDER) run $(platform_arg) --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION) $(IMAGE_SHELL)
 
 PHONIES += $1 $1/ $1/inspect $1/push $1/run $1/shell $1/latest build/$1.dockerfile
 
