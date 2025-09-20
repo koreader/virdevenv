@@ -165,9 +165,6 @@ RUN sudo --preserve-env=DEBIAN_FRONTEND apt-get install --no-install-recommends 
 # cross-toolchains too we need another location only used by the native
 # toolchain: `/usr/local/include` to the rescue!
 RUN sudo ln -sf /usr/include/x86_64-linux-gnu/asm /usr/local/include/asm
-# Create a symlink to prevent trouble finding the library in CI.
-# TODO: make this more dependable in base.
-RUN sudo ln -sf /usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0 /usr/lib/x86_64-linux-gnu/libSDL2.so
 
 # ccache
 ARG CCACHE_VER="4.11.3"
