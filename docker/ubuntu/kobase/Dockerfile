@@ -98,6 +98,7 @@ index 2464d03..44357cb 100644
          struct sched_param sp;
          // "The specified scheduling parameters are only used if the scheduling
 EOF
+
 RUN luarocks make lanes-${LANES_VER}-0.rockspec
 # Ensure lanes module is detected by luacheck.
 RUN luacheck --version | grep "^LuaLanes: ${LANES_VER}"

@@ -10,6 +10,7 @@ COPY <<EOF /etc/apt/sources.list.d/clang${CLANG_VERSION}.list
 deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-${CLANG_VERSION} main
 deb-src http://apt.llvm.org/jammy/ llvm-toolchain-jammy-${CLANG_VERSION} main
 EOF
+
 RUN apt-get update -y
 RUN apt-get install -y --no-install-recommends clang-${CLANG_VERSION}
 RUN apt-get remove --auto-remove gcc-11 -y
