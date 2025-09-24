@@ -348,12 +348,12 @@ class PipeLine():
     def on_post(self, req, resp):
         token = req.headers.get('X-GITLAB-TOKEN')
         if not token or not hmac.compare_digest(token, GITLAB_TOKEN):
-            raise falcon.HTTPBadRequest('Yoyo', '')
+            raise falcon.errors.HTTPBadRequest(description='missing X-GITLAB-TOKEN')
 
         try:
             data = ujson.load(req.stream)
         except Exception as e:
-            raise falcon.HTTPBadRequest('Bad body', '') from e
+            raise falcon.errors.HTTPBadRequest(description='Bad body') from e
         logger.debug('Got webhook request: %s', data)
 
         if data['object_kind'] != 'pipeline':
