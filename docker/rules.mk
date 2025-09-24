@@ -12,9 +12,8 @@ define DOCKERFILE
 
 # PRE {{{
 
-ARG REGISTRY=docker.io
 ARG BASE=scratch
-FROM $${REGISTRY}/$${BASE} AS build
+FROM $${BASE} AS build
 ARG USER WORKDIR
 
 # }}}
@@ -69,8 +68,9 @@ platform_arg = $(if $(PLATFORM),--platform $(PLATFORM))
 define image_build
 	$($(BUILDER)_build)
 	$(platform_arg)
-	--build-arg REGISTRY=$(REGISTRY) --build-arg BASE=$(IMAGE_BASE)
-	--build-arg USER=$(IMAGE_USER) --build-arg WORKDIR=$(IMAGE_WORKDIR)
+	--build-arg BASE=$(IMAGE_BASE)
+	--build-arg USER=$(IMAGE_USER)
+	--build-arg WORKDIR=$(IMAGE_WORKDIR)
 	$(patsubst %,--build-arg %,$(strip $(BUILD_ARGS)))
 	-t $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION)
 	--progress plain
