@@ -3,7 +3,14 @@ DEFAULT_IMAGE_SHELL   = bash -l
 DEFAULT_IMAGE_USER    = ko
 DEFAULT_IMAGE_WORKDIR = /home/$(IMAGE_USER)
 
-define DEFAULT_IMAGE_POST_CLEANUP
+define DEFAULT_IMAGE_PRE
+USER 0
+WORKDIR $${WORKDIR}
+ARG DEBIAN_FRONTEND=noninteractive
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+endef
+
+define DEFAULT_IMAGE_POST
 RUN apt-get clean
 RUN rm -rf \
 	/tmp/* \
