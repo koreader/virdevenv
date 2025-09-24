@@ -18,6 +18,7 @@ COPY --chmod=755 <<'EOF' /opt/uber-apk-signer/uber-apk-signer
 #!/bin/sh
 exec java -jar /opt/uber-apk-signer/uber-apk-signer.jar "$@"
 EOF
+
 RUN ln -snf /opt/uber-apk-signer/uber-apk-signer /usr/local/bin/
 RUN rm uber-apk-signer.jar
 
