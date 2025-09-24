@@ -1,3 +1,5 @@
+TOP := $(abspath ../$(dir $(lastword $(MAKEFILE_LIST))))
+
 .DEFAULT: usage
 .SILENT:
 
@@ -43,7 +45,7 @@ endef
 
 IMAGES = $(patsubst %/,%,$(dir $(wildcard */Dockerfile)))
 
-PHONIES = all prune
+PHONIES = all lint prune
 
 # Docker support. {{{
 
@@ -109,10 +111,15 @@ $1 $1/: build/$1.dockerfile
 $1/inspect:
 	$(BUILDER) image inspect $(platform_arg) $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION) | jq --sort-keys
 
+$1/hadolint: build/$1.dockerfile
+	hadolint --config $(TOP)/.hadolint.yaml $$<
+
 ifeq (docker,$(BUILDER))
 $1/latest:
 	$(BUILDER) buildx imagetools create $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION) --tag $(REGISTRY)/$(USER)/$(IMAGE):latest
 endif
+
+$1/lint: $1/hadolint
 
 $1/push:
 	$(BUILDER) push $(platform_arg) $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION)
@@ -123,7 +130,7 @@ $1/run:
 $1/shell:
 	$(BUILDER) run $(platform_arg) --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION) $(IMAGE_SHELL)
 
-PHONIES += $1 $1/ $1/inspect $1/push $1/run $1/shell $1/latest build/$1.dockerfile
+PHONIES += $1 $1/ $1/hadolint $1/latest $1/lint $1/inspect $1/push $1/run $1/shell build/$1.dockerfile
 
 endef
 
@@ -166,6 +173,10 @@ build/:
 	mkdir -p $@
 
 $(foreach i,$(IMAGES),$(eval $(call image_rules,$i)))
+
+hadolint: $(IMAGES:%=%/hadolint)
+
+lint: $(IMAGES:%=%/lint)
 
 .PHONY: $(PHONIES)
 
