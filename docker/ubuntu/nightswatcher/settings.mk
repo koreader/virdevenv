@@ -20,7 +20,9 @@ define IMAGE_CMD
 endef
 IMAGE_CMD := $(strip $(IMAGE_CMD))
 
-PHONIES += nightswatcher/lint
+PHONIES += nightswatcher/pylint
 
-nightswatcher/lint:
+nightswatcher/lint: nightswatcher/pylint
+
+nightswatcher/pylint:
 	pylint --fail-on=E --fail-under=8 --rcfile nightswatcher/.pylintrc nightswatcher/nightswatcher.py
