@@ -13,7 +13,7 @@ shift 2
 
 echo "installing x-tools: $platform $version"
 
-wget --progress=dot:giga "https://github.com/koreader/koxtoolchain/releases/download/$version/$platform.tar.gz"
+wget -nv "https://github.com/koreader/koxtoolchain/releases/download/$version/$platform.tar.gz"
 sudo tar xzv --no-same-owner -C /usr/local -f "$platform.tar.gz"
 rm "$platform.tar.gz"
 cd /usr/local
