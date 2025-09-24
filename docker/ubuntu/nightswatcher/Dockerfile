@@ -1,15 +1,15 @@
 ARG DEBIAN_FRONTEND=noninteractive
 WORKDIR /
-RUN apt update
+RUN apt-get update
 RUN apt-get upgrade -y
-RUN apt install --no-install-recommends -y curl
+RUN apt-get install --no-install-recommends -y curl
 
 # Install zsync.
-RUN apt install --no-install-recommends -y zsync
+RUN apt-get install --no-install-recommends -y zsync
 
 # Install uber-apk-signer.
 ARG JDK_VER="17"
-RUN apt install --no-install-recommends -y openjdk-${JDK_VER}-jre-headless
+RUN apt-get install --no-install-recommends -y openjdk-${JDK_VER}-jre-headless
 ARG UBER_APK_SIGNER_VER="1.3.0"
 RUN curl --location --output uber-apk-signer.jar https://github.com/patrickfav/uber-apk-signer/releases/download/v${UBER_APK_SIGNER_VER}/uber-apk-signer-${UBER_APK_SIGNER_VER}.jar
 RUN install -d /opt/uber-apk-signer
@@ -24,7 +24,7 @@ RUN rm uber-apk-signer.jar
 
 # Install nightswatcher's other runtime dependencies.
 # FIXME: replace single `requests` use in nightswatcher by a call to curl.
-RUN apt install --no-install-recommends -y \
+RUN apt-get install --no-install-recommends -y \
     curl \
     gunicorn \
     python3-falcon \
