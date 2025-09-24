@@ -1,11 +1,11 @@
-RUN sudo apt-get -qq update
-RUN wget https://github.com/koreader/koreader-base/raw/4e2c7afb94cb11c9eaa293c2285ed9950118077c/toolchain/Makefile
+RUN apt-get -qq update
+RUN wget -nv https://github.com/koreader/koreader-base/raw/4e2c7afb94cb11c9eaa293c2285ed9950118077c/toolchain/Makefile
 
 # Install NDK.
 ARG NDK NDK_SUM
-RUN sudo make -C /opt -f "$PWD/Makefile" TOOLCHAIN_DIR=/opt \
+RUN make -C /opt -f "$PWD/Makefile" TOOLCHAIN_DIR=/opt \
   NDK_DIR="$NDK" NDK_SUM="$NDK_SUM" android-ndk
-RUN sudo bash -e <<EOF
+RUN bash -e <<EOF
   cd /opt/$NDK
   rm -vrf prebuilt/android-*
   rm -vrf shader-tools simpleperf
@@ -32,42 +32,42 @@ EOF
 # Install SDK.
 ARG JDK
 # NOTE: add `ttf-bitstream-vera` so the bigger `fonts-dejavu-core` package does not get installed.
-RUN sudo apt-get -qq install --no-install-recommends ttf-bitstream-vera openjdk-$JDK-jdk-headless
+RUN apt-get -qq install --no-install-recommends ttf-bitstream-vera openjdk-$JDK-jdk-headless
 ARG SDK SDK_SUM
-RUN sudo make -C /opt -f "$PWD/Makefile" TOOLCHAIN_DIR=/opt \
+RUN make -C /opt -f "$PWD/Makefile" TOOLCHAIN_DIR=/opt \
   SDK_SUM="$SDK_SUM" SDK_TARBALL="commandlinetools-linux-$SDK.zip" android-sdk
-RUN sudo hardlink /opt/android-sdk-linux
+RUN hardlink /opt/android-sdk-linux
 
 # Since we use the host clang compiler provided by the NDK, we do not
 # need gcc-multilib / g++, and only keep some of their dependencies.
 RUN apt-cache depends --important gcc-11-multilib \
   | sed -n '/^ *Depends: \(.*\)$/{s//\1/;/^gcc/d;p}' \
-  | xargs sudo apt-mark manual
-RUN sudo apt-get autoremove -y g++ gcc-11-multilib
+  | xargs apt-mark manual
+RUN apt-get autoremove -y g++ gcc-11-multilib
 # We also don't need SDL2.
-RUN sudo apt-get autoremove -y libsdl2-2.0-0
+RUN apt-get autoremove -y libsdl2-2.0-0
 
 # Install uber-apk-signer.
 ARG UBER_APK_SIGNER_VER="1.3.0"
-RUN wget -O uber-apk-signer.jar https://github.com/patrickfav/uber-apk-signer/releases/download/v${UBER_APK_SIGNER_VER}/uber-apk-signer-${UBER_APK_SIGNER_VER}.jar
-RUN sudo install -d /opt/uber-apk-signer
-RUN sudo install -m644 uber-apk-signer.jar /opt/uber-apk-signer/
+RUN wget -nv -O uber-apk-signer.jar "https://github.com/patrickfav/uber-apk-signer/releases/download/v${UBER_APK_SIGNER_VER}/uber-apk-signer-${UBER_APK_SIGNER_VER}.jar"
+RUN install -d /opt/uber-apk-signer
+RUN install -m644 uber-apk-signer.jar /opt/uber-apk-signer/
 COPY --chmod=755 <<'EOF' /opt/uber-apk-signer/uber-apk-signer
 #!/bin/sh
 exec java -jar /opt/uber-apk-signer/uber-apk-signer.jar "$@"
 EOF
 
-RUN sudo ln -snfr /opt/uber-apk-signer/uber-apk-signer /usr/local/bin/
+RUN ln -snfr /opt/uber-apk-signer/uber-apk-signer /usr/local/bin/
 RUN rm uber-apk-signer.jar
 
 # Cleanup.
 RUN rm -vrf ~/.android/cache
-RUN sudo apt-get clean
-RUN sudo rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN apt-get clean
+RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Setup shell environment.
 ARG JDK NDK
-RUN sudo tee -a ~/.bashrc /root/.bashrc <<EOF
+RUN tee -a ~/.bashrc /root/.bashrc <<EOF
 export JAVA_HOME='/usr/lib/jvm/java-$JDK-openjdk-amd64'
 export ANDROID_NDK_HOME='/opt/$NDK'
 export ANDROID_HOME='/opt/android-sdk-linux'
