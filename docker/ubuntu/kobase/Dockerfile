@@ -1,7 +1,5 @@
 # BOOTSTRAP {{{
 
-ARG DEBIAN_FRONTEND=noninteractive
-
 RUN apt-get update
 RUN apt-get upgrade -y
 
@@ -39,7 +37,7 @@ WORKDIR luajit
 RUN git fetch --depth 1 origin +${LUAJIT_VER}:refs/remotes/origin/${LUAJIT_VER}
 RUN git checkout ${LUAJIT_VER}
 RUN make -j"$(nproc)" amalg
-RUN sudo make install
+RUN make install
 RUN luajit -v
 WORKDIR ..
 RUN rm -rf luajit
@@ -50,7 +48,7 @@ RUN rm -rf luajit
 
 # Install luarocks.
 ARG LUAROCKS_VER="3.12.2"
-RUN wget https://luarocks.github.io/luarocks/releases/luarocks-${LUAROCKS_VER}.tar.gz
+RUN wget -nv https://luarocks.github.io/luarocks/releases/luarocks-${LUAROCKS_VER}.tar.gz
 RUN tar xvf luarocks-${LUAROCKS_VER}.tar.gz
 WORKDIR luarocks-${LUAROCKS_VER}
 RUN ./configure
@@ -74,11 +72,11 @@ RUN luarocks install luafilesystem ${LUAFILESYSTEM_VER}
 # luacheck
 ARG LUACHECK_VER="1.2.0-1"
 RUN luarocks install luacheck ${LUACHECK_VER}
-RUN sed -i 's/ lua$/ luajit/' $(which luacheck)
+RUN sed -i 's/ lua$/ luajit/' "$(which luacheck)"
 
 # lanes (for parallel luacheck)
 ARG LANES_VER="3.17.1"
-RUN wget https://github.com/LuaLanes/lanes/archive/refs/tags/v${LANES_VER}.tar.gz
+RUN wget -nv https://github.com/LuaLanes/lanes/archive/refs/tags/v${LANES_VER}.tar.gz
 RUN tar -xf v${LANES_VER}.tar.gz
 RUN rm v${LANES_VER}.tar.gz
 WORKDIR lanes-${LANES_VER}
@@ -171,34 +169,34 @@ EOF
 
 # ccache
 ARG CCACHE_VER="4.12"
-RUN wget -O - https://github.com/ccache/ccache/releases/download/v${CCACHE_VER}/ccache-${CCACHE_VER}-linux-$(uname -m).tar.xz | tar --strip-components=1 -xJf - --no-anchored ccache
+RUN wget -nv -O - "https://github.com/ccache/ccache/releases/download/v${CCACHE_VER}/ccache-${CCACHE_VER}-linux-$(uname -m).tar.xz" | tar --strip-components=1 -xJf - --no-anchored ccache
 RUN install -m755 ccache /usr/local/bin/
 RUN rm ccache
 
 # cmake-lint
 ARG CMAKE_LINT_VER="1.4.3"
-RUN python3 -m pip install cmakelint==${CMAKE_LINT_VER}
+RUN pip install --no-cache-dir cmakelint==${CMAKE_LINT_VER}
 
 # meson
 ARG MESON_VER="1.4.1"
-RUN python3 -m pip install meson==${MESON_VER}
+RUN pip install --no-cache-dir meson==${MESON_VER}
 
 # ninjatracing
 ARG NINJATRACING_VER="084212eaf68f25c70579958a2ed67fb4ec2a9ca4"
-RUN wget -O ninjatracing.zip https://github.com/nico/ninjatracing/archive/${NINJATRACING_VER}.zip
+RUN wget -nv -O ninjatracing.zip https://github.com/nico/ninjatracing/archive/${NINJATRACING_VER}.zip
 RUN unzip -j ninjatracing.zip '*/ninjatracing'
 RUN install -m755 ninjatracing /usr/local/bin/
 RUN rm ninjatracing*
 
 # shellcheck
 ARG SHELLCHECK_VERSION="0.11.0"
-RUN wget -O - https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.$(uname -m).tar.xz | tar --strip-components=1 -xJf - --no-anchored shellcheck
+RUN wget -nv -O - "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.$(uname -m).tar.xz" | tar --strip-components=1 -xJf - --no-anchored shellcheck
 RUN install -m 755 shellcheck /usr/local/bin
 RUN rm shellcheck
 
 # shfmt
 ARG SHFMT_VER="3.12.0"
-RUN wget -O shfmt https://github.com/mvdan/sh/releases/download/v${SHFMT_VER}/shfmt_v${SHFMT_VER}_linux_amd64
+RUN wget -nv -O shfmt https://github.com/mvdan/sh/releases/download/v${SHFMT_VER}/shfmt_v${SHFMT_VER}_linux_amd64
 RUN install -m 755 shfmt /usr/local/bin
 RUN rm shfmt
 

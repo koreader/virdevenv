@@ -17,6 +17,7 @@ define DOCKERFILE
 ARG BASE=scratch
 FROM $${BASE} AS build
 ARG USER WORKDIR
+$(IMAGE_PRE)
 
 # }}}
 
@@ -28,8 +29,9 @@ $(file <$1)
 
 # POST {{{
 
+# hadolint ignore=DL3002
 USER 0
-$(IMAGE_POST_CLEANUP)
+$(IMAGE_POST)
 FROM scratch AS final
 COPY --from=build / /
 ARG USER WORKDIR
@@ -86,7 +88,7 @@ to_json_array = [$(patsubst %,"%"$(comma),$(wordlist 2,$(words $1),1 $1)) "$(las
 define image_rules
 $(eval IMAGE := $1)
 $(eval VERSION := )
-$(foreach v,BUILD_ARGS IMAGE_BASE IMAGE_CMD IMAGE_POST_CLEANUP IMAGE_SHELL IMAGE_USER IMAGE_WORKDIR,
+$(foreach v,BUILD_ARGS IMAGE_BASE IMAGE_CMD IMAGE_POST IMAGE_PRE IMAGE_SHELL IMAGE_USER IMAGE_WORKDIR,
 $(eval $v := $$(DEFAULT_$v))
 )
 $(eval include $1/settings.mk)
