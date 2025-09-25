@@ -3,6 +3,8 @@ DEFAULT_IMAGE_SHELL   = bash -l
 DEFAULT_IMAGE_USER    = ko
 DEFAULT_IMAGE_WORKDIR = /home/$(IMAGE_USER)
 
+UBUNTU_IMAGE = docker.io/library/ubuntu:jammy
+
 define DEFAULT_IMAGE_PRE
 USER 0
 WORKDIR $${WORKDIR}
