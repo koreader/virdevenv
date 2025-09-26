@@ -9,6 +9,8 @@ BUILDER ?= docker
 REGISTRY ?= docker.io
 PLATFORM ?=
 
+REGCTL ?= regctl
+
 define DOCKERFILE
 # Automatically generated, do not edit!
 
@@ -46,8 +48,10 @@ CMD $(or $(IMAGE_CMD),$(call to_json_array,$(IMAGE_SHELL)))
 endef
 
 IMAGES = $(patsubst %/,%,$(dir $(wildcard */Dockerfile)))
+IMAGE_IDS =
+BASE_IDS =
 
-PHONIES = all lint prune
+PHONIES = all ci-matrix ci-matrix/ lint prune
 
 # Docker support. {{{
 
@@ -76,7 +80,7 @@ define image_build
 	--build-arg USER=$(IMAGE_USER)
 	--build-arg WORKDIR=$(IMAGE_WORKDIR)
 	$(patsubst %,--build-arg %,$(strip $(BUILD_ARGS)))
-	-t $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION)
+	-t $(IMAGE)
 	--progress plain
 	--file
 endef
@@ -84,11 +88,11 @@ endef
 comma = ,
 shell_escape = '$(subst ','\'',$1)'
 to_json_array = [$(patsubst %,"%"$(comma),$(wordlist 2,$(words $1),1 $1)) "$(lastword $1)"]
+target_escape = $(subst :,\:,$1)
 
 define image_rules
-$(eval IMAGE := $1)
 $(eval VERSION := )
-$(foreach v,BUILD_ARGS IMAGE_BASE IMAGE_CMD IMAGE_POST IMAGE_PRE IMAGE_SHELL IMAGE_USER IMAGE_WORKDIR,
+$(foreach v,BUILD_ARGS IMAGE_BASE IMAGE_CMD IMAGE_PLATFORM IMAGE_POST IMAGE_PRE IMAGE_SHELL IMAGE_USER IMAGE_WORKDIR,
 $(eval $v := $$(DEFAULT_$v))
 )
 $(eval include $1/settings.mk)
@@ -97,6 +101,8 @@ ifeq (,$$($v))
 $$(error $1: $v not defined)
 endif
 )
+
+$(eval IMAGE := $(REGISTRY)/$(USER)/$1:$(VERSION))
 
 $1_DOCKERFILE := $$(call DOCKERFILE,$1/Dockerfile)
 
@@ -107,32 +113,48 @@ else
 	$$(file >$$@,$$($1_DOCKERFILE))
 endif
 
+IMAGE_IDS += $(IMAGE)
+BASE_IDS += $(IMAGE_BASE)
+
 $1 $1/: build/$1.dockerfile
 	$(strip $(call image_build,$1)) $$< .
 
+$(call target_escape,ci-matrix/$(IMAGE)) ci-matrix/$1: $(call target_escape,ci-matrix/$(IMAGE_BASE))
+	@echo '$(IMAGE)' 1>&2
+	$(REGCTL) image digest $(IMAGE) 1>&2 || printf '%s' '{ "id": "$1 $(VERSION)", "image": "$(IMAGE)", "base": "$(IMAGE_BASE)", "platform": "$(subst ",\",$(subst $(empty) $(empty),,$(call to_json_array,$(IMAGE_PLATFORM))))" }, '
+
 $1/inspect:
-	$(BUILDER) image inspect $(platform_arg) $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION) | jq --sort-keys
+	$(BUILDER) image inspect $(platform_arg) $(IMAGE) | jq --sort-keys
 
 $1/hadolint: build/$1.dockerfile
 	hadolint --config $(TOP)/.hadolint.yaml $$<
 
 ifeq (docker,$(BUILDER))
 $1/latest:
-	$(BUILDER) buildx imagetools create $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION) --tag $(REGISTRY)/$(USER)/$(IMAGE):latest
+	$(BUILDER) buildx imagetools create $(IMAGE) --tag $(REGISTRY)/$(USER)/$1:latest
 endif
 
 $1/lint: $1/hadolint
 
 $1/push:
-	$(BUILDER) push $(platform_arg) $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION)
+	$(BUILDER) push $(platform_arg) $(IMAGE)
 
 $1/run:
-	$(BUILDER) run $(platform_arg) --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION)
+	$(BUILDER) run $(platform_arg) --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(IMAGE)
+
+$1/save:
+	$(BUILDER) save $(platform_arg) --output '$(or $(TAR),$1.tar)' $(IMAGE)
 
 $1/shell:
-	$(BUILDER) run $(platform_arg) --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(REGISTRY)/$(USER)/$(IMAGE):$(VERSION) $(IMAGE_SHELL)
+	$(BUILDER) run $(platform_arg) --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(IMAGE) $(IMAGE_SHELL)
 
-PHONIES += $1 $1/ $1/hadolint $1/latest $1/lint $1/inspect $1/push $1/run $1/shell build/$1.dockerfile
+PHONIES += build/$1.dockerfile
+
+$(foreach t,$1 $1/ $1/hadolint $1/latest $1/lint $1/inspect $1/push $1/run $1/save $1/shell,
+$(foreach i,$(call target_escape,$(patsubst $1%,$(IMAGE)%,$t)),
+$(eval PHONIES += $t $i)
+$(eval $i: $t)
+))
 
 endef
 
@@ -152,8 +174,10 @@ TARGETS:
 	make IMAGE/run        run image
 	make IMAGE/shell      run interactive shell in image
 	make IMAGE/push       push image to registry
+	make IMAGE/save       save image to tar
 	make IMAGE/lastest    tag image version has latest (docker only)
 	make prune            prune dangling images
+	make ci-matrix        output CI build matrix
 
 VARIABLES:
 	USER                  repository name (e.g. koreader, default: $(USER))
@@ -179,6 +203,10 @@ $(foreach i,$(IMAGES),$(eval $(call image_rules,$i)))
 hadolint: $(IMAGES:%=%/hadolint)
 
 lint: $(IMAGES:%=%/lint)
+
+ci-matrix ci-matrix/: $(foreach t,$(IMAGE_IDS),$(call target_escape,ci-matrix/$t))
+
+$(foreach t,$(filter-out $(IMAGE_IDS),$(BASE_IDS)),$(call target_escape,ci-matrix/$t)):
 
 .PHONY: $(PHONIES)
 
