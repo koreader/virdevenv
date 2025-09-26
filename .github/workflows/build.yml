@@ -1,0 +1,143 @@
+name: Build
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      images:
+        description: 'Build the specified images (empty: build all)'
+        required: false
+        type: string
+      nodeps:
+        description: 'Ignore dependencies between images (only build the specified images)'
+        type: boolean
+      rebuild:
+        description: 'Force rebuilding images (including their dependencies if not ignored)'
+        type: boolean
+      publish:
+        description: 'Publish images to registry'
+        type: boolean
+      lint:
+        description: 'Run lint job'
+        type: boolean
+
+defaults:
+  run:
+    shell: bash
+
+
+jobs:
+
+  lint:
+
+    if: github.event.inputs == null || inputs.lint
+
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          clean: false
+          fetch-depth: 1
+          show-progress: false
+
+      - name: Install dependencies
+        run: |
+          set -x
+          ./docker/ubuntu/scripts/install_hadolint.sh
+
+      - name: Lint
+        run: make -C docker/ubuntu hadolint --output-sync -j$(nproc) -k
+
+
+  prepare:
+
+    name: Prepare
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          clean: false
+          fetch-depth: 1
+          show-progress: false
+
+      - name: Install regctl
+        run: ./docker/ubuntu/scripts/install_regctl.sh
+
+      - name: Generate outputs
+        id: generate
+        run: |
+          set -x
+          images=(${{ inputs.images && inputs.images || '""' }})
+          make -s -C docker/ubuntu --output-sync -j$(nproc) \
+            ${{ github.event.inputs != null && inputs.nodeps && 'IMAGE_BASE=scratch' || '' }} \
+            ${{ github.event.inputs != null && inputs.rebuild && 'REGCTL=false' || '' }} \
+            REGISTRY=${{ vars.DOCKER_REGISTRY }} USER=${{ vars.DOCKER_USERNAME }} \
+            ${images[@]/#/ci-matrix/} | tee base_matrix
+          sed -i 's/^/[ /;s/, $/ ]\n/' base_matrix; cat base_matrix
+          jq --color-output <base_matrix
+          publish="${{ !!(github.event.inputs == null && github.ref == 'refs/heads/master' || inputs.publish) }}"
+          if [[ "${publish}" == 'true' ]]; then
+            # Just strip `.base` members.
+            jq <base_matrix >final_matrix '[ .[] | .base |= select(false) ]'
+          else
+            jq <base_matrix >final_matrix '
+              # Save a reference to top object.
+              . as $o |
+              # Build a mapping of images being built.
+              [ .[] | { key: (.image), value: true } ] | from_entries as $images |
+              # And produce an updated version of the top object input with
+              # each `.base` member stripped when not one the built images.
+              # NOTE: we also convert an image base name to its build ID.
+              [$o | .[] | .base |= (select(. as $i | $images | has($i)) |
+                                    ltrimstr("${{ vars.DOCKER_REGISTRY }}/${{ vars.DOCKER_USERNAME }}/") |
+                                    gsub("[/:]"; " ")) ]
+              '
+          fi
+          jq --color-output <final_matrix
+          jq --compact-output <final_matrix | sed 's/^/matrix=/' | tee -a "${GITHUB_OUTPUT}"
+          printf '%s=%s\n' 'publish' "${publish}" | tee -a "${GITHUB_OUTPUT}"
+
+    outputs:
+      matrix: ${{ steps.generate.outputs.matrix }}
+      publish: ${{ steps.generate.outputs.publish }}
+
+
+  build:
+
+    needs: [prepare, lint]
+    if: |
+      !cancelled() &&
+      needs.prepare.outputs.matrix &&
+      contains('skipped success', needs.lint.result)
+
+    strategy:
+      max-parallel: 1
+      matrix:
+        include: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+
+    name: Build ${{ matrix.id }}
+
+    uses: ./.github/workflows/build.image.yml
+    secrets:
+      # Yep, this is required to allow the use of the `docker` environment
+      # secret of the same name in the called workflow… Pretty evident,
+      # right? ¯\_(ツ)_/¯
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+    with:
+      id: ${{ matrix.id }}
+      image: ${{ matrix.image }}
+      base: ${{ matrix.base }}
+      platform: ${{ matrix.platform }}
+      publish: ${{ fromJSON(needs.prepare.outputs.publish) }}

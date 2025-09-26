@@ -1,0 +1,120 @@
+name: Build Image
+
+on:
+  workflow_call:
+    inputs:
+      id:
+        required: true
+        type: string
+      image:
+        required: true
+        type: string
+      base:
+        required: true
+        type: string
+      platform:
+        required: true
+        type: string
+      publish:
+        required: true
+        type: boolean
+    secrets:
+      DOCKER_TOKEN:
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+
+jobs:
+
+
+  build:
+
+    strategy:
+      matrix:
+        platform: ${{ fromJSON(inputs.platform) }}
+
+    name: ${{ matrix.platform }}
+    runs-on: ${{ startsWith(matrix.platform, 'arm') && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+
+    env:
+      MAKEFLAGS: -s REGISTRY=${{ vars.DOCKER_REGISTRY }} USER=${{ vars.DOCKER_USERNAME }} PLATFORM=${{ matrix.platform }}
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          clean: false
+          fetch-depth: 1
+          show-progress: false
+
+      - name: Download base image from artifacts
+        if: inputs.base
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ inputs.base }} ${{ matrix.platform }}
+
+      - name: Load base image
+        if: inputs.base
+        run: docker load -i '${{ inputs.base }} ${{ matrix.platform }}.tar'
+
+      - name: Build image
+        run: make -C docker/ubuntu ${{ inputs.image }}
+
+      - name: Save image
+        run: make -C docker/ubuntu ${{ inputs.image }}/save TAR='${{ runner.temp }}/${{ inputs.id }} ${{ matrix.platform }}.tar'
+
+      - name: Upload image to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.id }} ${{ matrix.platform }}
+          path: ${{ runner.temp }}/${{ inputs.id }} ${{ matrix.platform }}.tar
+          if-no-files-found: error
+          retention-days: 1
+
+
+  publish:
+
+    needs: build
+    if: inputs.publish
+
+    name: publish
+    runs-on: ubuntu-latest
+    environment: docker
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          clean: false
+          fetch-depth: 1
+          show-progress: false
+
+      - name: Install regctl
+        run: ./docker/ubuntu/scripts/install_regctl.sh
+
+      - name: Log in to the registry
+        env:
+          PASSWORD: ${{ secrets.DOCKER_TOKEN }}
+        run: regctl registry login '${{ vars.DOCKER_REGISTRY }}' --user '${{ vars.DOCKER_USERNAME }}' --pass-stdin <<<"${PASSWORD}"
+
+      - name: Download platform images from artifacts
+        uses: actions/download-artifact@v5
+        with:
+          pattern: ${{ inputs.id }} *
+          merge-multiple: true
+
+      - name: Aggregate & publish final image
+        run: |
+          set -x
+          command=(regctl index create)
+          for tar in *.tar; do
+            ocidir="ocidir://${tar%.tar}"
+            regctl image import "${ocidir}" "${tar}"
+            command+=(--ref "${ocidir}")
+          done
+          "${command[@]}" ${{ inputs.image }}
