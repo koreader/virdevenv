@@ -91,7 +91,7 @@ def run_cmd(cmd):
 def sign_apk(apk_path):
     logger.info('Signing %s...', apk_path)
     res = gevent.subprocess.check_output(
-        ['java', '-jar', 'uber-apk-signer.jar',
+        ['uber-apk-signer',
          '--ks', APK_SIGN_KEY_STORE_PATH,
          '--ksAlias', APK_SIGN_KEY_ALIAS,
          '--ksKeyPass', APK_SIGN_KEY_PASS,
