@@ -4,6 +4,9 @@ RUN apt-get update
 RUN apt-get upgrade -y
 RUN apt-get install --no-install-recommends -y curl
 
+# Install zipalign & unzip.
+RUN apt-get install --no-install-recommends -y unzip zipalign
+
 # Install zsync.
 RUN apt-get install --no-install-recommends -y zsync
 
