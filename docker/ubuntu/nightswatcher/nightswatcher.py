@@ -60,7 +60,7 @@ artifact_re_deb = re.compile((
     r'.*/koreader-'
     r'(?P<version>[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-(?P<commit_number>[0-9]+))?)-'
     r'(?:(?P<arch>armhf|arm64|amd64))'
-    r'(?P<ftype>\.deb)$'
+    r'\.(?P<ftype>deb)$'
 ))
 
 def trigger_build():
