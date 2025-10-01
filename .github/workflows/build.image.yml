@@ -18,6 +18,12 @@ on:
       publish:
         required: true
         type: boolean
+      registry:
+        required: true
+        type: string
+      username:
+        required: true
+        type: string
     secrets:
       DOCKER_TOKEN:
         required: true
@@ -40,7 +46,7 @@ jobs:
     runs-on: ${{ startsWith(matrix.platform, 'arm') && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
 
     env:
-      MAKEFLAGS: -s REGISTRY=${{ vars.DOCKER_REGISTRY }} USER=${{ vars.DOCKER_USERNAME }} PLATFORM=${{ matrix.platform }}
+      MAKEFLAGS: -s REGISTRY=${{ inputs.registry }} USER=${{ inputs.username }} PLATFORM=${{ matrix.platform }}
 
     steps:
 
@@ -100,7 +106,7 @@ jobs:
       - name: Log in to the registry
         env:
           PASSWORD: ${{ secrets.DOCKER_TOKEN }}
-        run: regctl registry login '${{ vars.DOCKER_REGISTRY }}' --user '${{ vars.DOCKER_USERNAME }}' --pass-stdin <<<"${PASSWORD}"
+        run: regctl registry login '${{ inputs.registry }}' --user '${{ inputs.username }}' --pass-stdin <<<"${PASSWORD}"
 
       - name: Download platform images from artifacts
         uses: actions/download-artifact@v5

@@ -79,20 +79,29 @@ jobs:
         id: generate
         run: |
           set -x
+          exec 2>&1 # avoid jumbled output…
           images=(${{ inputs.images && inputs.images || '""' }})
+          if [[ -z '${{ vars.DOCKER_REGISTRY }}' ]] || [[ -z '${{ vars.DOCKER_USERNAME }}' ]]; then
+            # Required variables are not setup, skip building unless we were triggered
+            # by workflow dispatch, in which case we force rebuilding and don't publish.
+            [[ '${{ github.event.inputs != null }}' = 'true' ]] || exit 0
+            rebuild=1 publish= registry='docker.io' username='${{ github.actor }}'
+          else
+            rebuild=${{ github.event.inputs != null && inputs.rebuild && 1 || '' }}
+            publish=${{ (github.event.inputs == null && github.ref == 'refs/heads/master' || inputs.publish) && 1 || '' }}
+          fi
+          nodeps=${{ github.event.inputs != null && inputs.nodeps && 1 || '' }}
           make -s -C docker/ubuntu --output-sync -j$(nproc) \
-            ${{ github.event.inputs != null && inputs.nodeps && 'IMAGE_BASE=scratch' || '' }} \
-            ${{ github.event.inputs != null && inputs.rebuild && 'REGCTL=false' || '' }} \
-            REGISTRY=${{ vars.DOCKER_REGISTRY }} USER=${{ vars.DOCKER_USERNAME }} \
+            ${nodeps:+IMAGE_BASE=scratch} ${rebuild:+REGCTL=false} \
+            REGISTRY="${registry}" USER="${username}" \
             ${images[@]/#/ci-matrix/} | tee base_matrix
           sed -i 's/^/[ /;s/, $/ ]\n/' base_matrix; cat base_matrix
           jq --color-output <base_matrix
-          publish="${{ !!(github.event.inputs == null && github.ref == 'refs/heads/master' || inputs.publish) }}"
-          if [[ "${publish}" == 'true' ]]; then
+          if [[ -n "${publish}" ]]; then
             # Just strip `.base` members.
             jq <base_matrix >final_matrix '[ .[] | .base |= select(false) ]'
           else
-            jq <base_matrix >final_matrix '
+            jq <base_matrix >final_matrix --arg registry "${registry}" --arg username "${username}" '
               # Save a reference to top object.
               . as $o |
               # Build a mapping of images being built.
@@ -101,17 +110,19 @@ jobs:
               # each `.base` member stripped when not one the built images.
               # NOTE: we also convert an image base name to its build ID.
               [$o | .[] | .base |= (select(. as $i | $images | has($i)) |
-                                    ltrimstr("${{ vars.DOCKER_REGISTRY }}/${{ vars.DOCKER_USERNAME }}/") |
+                                    ltrimstr($registry + "/" + $username + "/") |
                                     gsub("[/:]"; " ")) ]
               '
           fi
           jq --color-output <final_matrix
           jq --compact-output <final_matrix | sed 's/^/matrix=/' | tee -a "${GITHUB_OUTPUT}"
-          printf '%s=%s\n' 'publish' "${publish}" | tee -a "${GITHUB_OUTPUT}"
+          printf '%s=%s\n' publish "${publish:-false}" registry "${registry}" username "${username}" | tee -a "${GITHUB_OUTPUT}"
 
     outputs:
       matrix: ${{ steps.generate.outputs.matrix }}
       publish: ${{ steps.generate.outputs.publish }}
+      registry: ${{ steps.generate.outputs.registry }}
+      username: ${{ steps.generate.outputs.username }}
 
 
   build:
@@ -141,3 +152,5 @@ jobs:
       base: ${{ matrix.base }}
       platform: ${{ matrix.platform }}
       publish: ${{ fromJSON(needs.prepare.outputs.publish) }}
+      registry: ${{ needs.prepare.outputs.registry }}
+      username: ${{ needs.prepare.outputs.username }}
