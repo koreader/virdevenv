@@ -2,10 +2,14 @@ ARG DEBIAN_FRONTEND=noninteractive
 WORKDIR /
 RUN apt-get update
 RUN apt-get upgrade -y
-RUN apt-get install --no-install-recommends -y curl
+RUN apt-get install --no-install-recommends -y \
+    curl \
+    unzip \
+    ;
 
-# Install zipalign & unzip.
-RUN apt-get install --no-install-recommends -y unzip zipalign
+# Install zipalign.
+# NOTE: used by uber-apk-signer, which already vendors-in binaries for some platforms, but not Linux AArch64.
+RUN apt-get install --no-install-recommends -y zipalign
 
 # Install zsync.
 RUN apt-get install --no-install-recommends -y zsync
