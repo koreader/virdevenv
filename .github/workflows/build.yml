@@ -94,6 +94,7 @@ jobs:
             [[ '${{ github.event.inputs != null }}' = 'true' ]] || exit 0
             rebuild=1 publish= registry='docker.io' username='${{ github.actor }}'
           else
+            registry='${{ vars.DOCKER_REGISTRY }}' username='${{ vars.DOCKER_USERNAME }}'
             rebuild=${{ github.event.inputs != null && inputs.rebuild && 1 || '' }}
             publish=${{ (github.event.inputs == null && github.ref == 'refs/heads/master' || inputs.publish) && 1 || '' }}
           fi
