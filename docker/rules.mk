@@ -127,7 +127,8 @@ $1/inspect:
 	$(BUILDER) image inspect $(platform_arg) $(IMAGE) | jq --sort-keys
 
 $1/hadolint: build/$1.dockerfile
-	hadolint --config $(TOP)/.hadolint.yaml $$<
+	$$(info hadolint $$<)
+	@hadolint --config $(TOP)/.hadolint.yaml $$<
 
 ifeq (docker,$(BUILDER))
 $1/latest:
