@@ -155,8 +155,9 @@ RUN apt-get install --no-install-recommends -y \
     $GLIB_DEPS \
     $MISC_TOOLS \
     ;
-RUN bash -xeo pipefail <<EOF
-if [[ "$(uname -m)" == 'x86_64' ]]; then
+RUN <<'EOF'
+set -x
+if [[ "${TARGETPLATFORM}" = 'linux/amd64' ]]; then
     # NOTE: we don't install `gcc-multilib`, as it conflicts with cross-toolchains.
     # (Cf. https://bugs.launchpad.net/ubuntu/+source/gcc-defaults/+bug/1300211)
     apt-get install --no-install-recommends -y gcc-11-multilib
@@ -171,9 +172,22 @@ EOF
 
 # ccache
 ARG CCACHE_VER="4.12"
-RUN wget -nv -O - "https://github.com/ccache/ccache/releases/download/v${CCACHE_VER}/ccache-${CCACHE_VER}-linux-$(uname -m).tar.xz" | tar --strip-components=1 -xJf - --no-anchored ccache
-RUN install -m755 ccache /usr/local/bin/
-RUN rm ccache
+RUN <<'EOF'
+set -x
+case "${TARGETPLATFORM}" in
+    linux/amd64) platform=linux-x86_64 ;;
+    linux/arm/v7) platform= ;;
+    linux/arm64) platform=linux-aarch64 ;;
+    *) exit 1 ;;
+esac
+if [[ -z "${platform}" ]]; then
+    apt-get install --no-install-recommends -y ccache
+else
+    wget -nv -O - "https://github.com/ccache/ccache/releases/download/v${CCACHE_VER}/ccache-${CCACHE_VER}-${platform}.tar.xz" | tar -C /usr/local/bin --strip-components=1 -xJf - --no-anchored ccache
+    chmod 755 /usr/local/bin/ccache
+fi
+ccache --version
+EOF
 
 # cmake-lint
 ARG CMAKE_LINT_VER="1.4.3"
@@ -192,15 +206,33 @@ RUN rm ninjatracing*
 
 # shellcheck
 ARG SHELLCHECK_VERSION="0.11.0"
-RUN wget -nv -O - "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.$(uname -m).tar.xz" | tar --strip-components=1 -xJf - --no-anchored shellcheck
-RUN install -m 755 shellcheck /usr/local/bin
-RUN rm shellcheck
+RUN <<'EOF'
+set -x
+case "${TARGETPLATFORM}" in
+    linux/amd64) platform=linux.x86_64 ;;
+    linux/arm/v7) platform=linux.armv6hf ;;
+    linux/arm64) platform=linux.aarch64 ;;
+    *) exit 1 ;;
+esac
+wget -nv -O - "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.${platform}.tar.xz" | tar -C /usr/local/bin --strip-components=1 -xJf - --no-anchored shellcheck
+chmod 755 /usr/local/bin/shellcheck
+shellcheck --version
+EOF
 
 # shfmt
 ARG SHFMT_VER="3.12.0"
-RUN wget -nv -O shfmt https://github.com/mvdan/sh/releases/download/v${SHFMT_VER}/shfmt_v${SHFMT_VER}_linux_amd64
-RUN install -m 755 shfmt /usr/local/bin
-RUN rm shfmt
+RUN <<'EOF'
+set -x
+case "${TARGETPLATFORM}" in
+    linux/amd64) platform=linux_amd64 ;;
+    linux/arm/v7) platform=linux_arm ;;
+    linux/arm64) platform=linux_arm64 ;;
+    *) exit 1 ;;
+esac
+wget -nv -O /usr/local/bin/shfmt https://github.com/mvdan/sh/releases/download/v${SHFMT_VER}/shfmt_v${SHFMT_VER}_${platform}
+chmod 755 /usr/local/bin/shfmt
+shfmt --version
+EOF
 
 # }}}
 
