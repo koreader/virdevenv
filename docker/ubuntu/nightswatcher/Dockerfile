@@ -3,9 +3,11 @@ RUN apt-get upgrade -y
 RUN apt-get install --no-install-recommends -y \
     ca-certificates \
     curl \
+    python3 \
     unzip \
     wget \
     ;
+RUN --mount=dst=/ctx /ctx/scripts/install_uv.sh
 
 # Install zipalign.
 # NOTE: used by uber-apk-signer, which already vendors-in binaries for some platforms, but not Linux AArch64.
@@ -27,18 +29,9 @@ COPY --chmod=755 <<'EOF' /opt/uber-apk-signer/uber-apk-signer
 exec java -jar /opt/uber-apk-signer/uber-apk-signer.jar "$@"
 EOF
 
-# Install nightswatcher's other runtime dependencies.
+# Install nightswatcher's other python dependencies.
 # FIXME: replace single `requests` use in nightswatcher by a call to curl.
-RUN apt-get install --no-install-recommends -y \
-    curl \
-    gunicorn \
-    python3-falcon \
-    python3-gevent \
-    python3-gunicorn \
-    python3-requests \
-    python3-ujson \
-    unzip \
-    ;
+RUN --mount=dst=/ctx uv pip install --system -r /ctx/nightswatcher/requirements.txt
 
 # And finally the nightswatcher' script itself.
 COPY --chmod=755 nightswatcher/nightswatcher.py /
@@ -48,5 +41,6 @@ RUN mkdir -p /data/ota /data/release_download /metadata
 RUN apt-get remove -y --auto-remove \
     wget \
     ;
+RUN rm /usr/local/bin/{uv,uvx}
 
 # vim: sw=4
