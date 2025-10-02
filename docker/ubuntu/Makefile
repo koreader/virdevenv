@@ -27,6 +27,4 @@ RUN rm -rf \
 RUN dpkg-query -W -f='$${Installed-Size;8}  $${Package}\n' | sort -n
 endef
 
-X_TOOLS_VERSION = 2025.05
-
 include ../rules.mk
