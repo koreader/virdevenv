@@ -41,6 +41,8 @@ RUN make install
 RUN luajit -v
 WORKDIR ..
 RUN rm -rf luajit
+RUN rm /usr/local/lib/libluajit-5.1.a
+RUN luajit -v
 
 # }}}
 
