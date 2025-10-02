@@ -183,7 +183,7 @@ esac
 if [[ -z "${platform}" ]]; then
     apt-get install --no-install-recommends -y ccache
 else
-    wget -nv -O - "https://github.com/ccache/ccache/releases/download/v${CCACHE_VER}/ccache-${CCACHE_VER}-${platform}.tar.xz" | tar -C /usr/local/bin --strip-components=1 -xJf - --no-anchored ccache
+    wget -nv -O - "https://github.com/ccache/ccache/releases/download/v${CCACHE_VER}/ccache-${CCACHE_VER}-${platform}.tar.xz" | tar -C /usr/local/bin --strip-components=1 -xJ "ccache-${CCACHE_VER}-${platform}/ccache"
     chmod 755 /usr/local/bin/ccache
 fi
 ccache --version
@@ -214,7 +214,7 @@ case "${TARGETPLATFORM}" in
     linux/arm64) platform=linux.aarch64 ;;
     *) exit 1 ;;
 esac
-wget -nv -O - "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.${platform}.tar.xz" | tar -C /usr/local/bin --strip-components=1 -xJf - --no-anchored shellcheck
+wget -nv -O - "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.${platform}.tar.xz" | tar -C /usr/local/bin --strip-components=1 -xJ "shellcheck-v${SHELLCHECK_VERSION}/shellcheck"
 chmod 755 /usr/local/bin/shellcheck
 shellcheck --version
 EOF
