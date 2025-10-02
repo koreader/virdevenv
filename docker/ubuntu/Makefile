@@ -23,6 +23,7 @@ RUN rm -rf \
 	/var/lib/apt/lists/* \
 	/var/tmp/* \
 	;
+RUN dpkg-query -W -f='$${Installed-Size;8}  $${Package}\n' | sort -n
 endef
 
 X_TOOLS_VERSION = 2025.05
