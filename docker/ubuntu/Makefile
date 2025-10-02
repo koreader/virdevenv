@@ -10,6 +10,7 @@ define DEFAULT_IMAGE_PRE
 USER 0
 WORKDIR $${WORKDIR}
 ARG DEBIAN_FRONTEND=noninteractive
+ARG TARGETPLATFORM
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 endef
 
