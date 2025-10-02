@@ -25,5 +25,6 @@ PHONIES += nightswatcher/pylint
 
 nightswatcher/lint: nightswatcher/pylint
 
-nightswatcher/pylint:
-	pylint --fail-on=E --fail-under=8 --rcfile nightswatcher/.pylintrc nightswatcher/nightswatcher.py
+nightswatcher/pylint: nightswatcher/nightswatcher.py
+	$(info pylint $<)
+	@pylint --fail-on=E --fail-under=8 --rcfile nightswatcher/.pylintrc $<
