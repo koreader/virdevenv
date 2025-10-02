@@ -49,13 +49,20 @@ jobs:
           fetch-depth: 1
           show-progress: false
 
+      - name: Setup python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+
       - name: Install dependencies
         run: |
           set -x
           ./docker/ubuntu/scripts/install_hadolint.sh
+          ./docker/ubuntu/scripts/install_uv.sh
+          uv pip install --system pylint -r ./docker/ubuntu/nightswatcher/requirements.txt
 
       - name: Lint
-        run: make -C docker/ubuntu hadolint --output-sync -j$(nproc) -k
+        run: make -s -C docker/ubuntu lint --output-sync -j$(nproc) -k
 
 
   prepare:
