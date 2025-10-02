@@ -29,7 +29,7 @@ RUN bash -e <<EOF
   strip --strip-unneeded lib64/liblldb*
 EOF
 
-# Install SDK.
+# Install JDK.
 ARG JDK
 # NOTE: add `ttf-bitstream-vera` so the bigger `fonts-dejavu-core` package does not get installed.
 RUN apt-get -qq install --no-install-recommends ttf-bitstream-vera openjdk-$JDK-jdk-headless
@@ -49,16 +49,14 @@ RUN apt-get autoremove -y libsdl2-2.0-0
 
 # Install uber-apk-signer.
 ARG UBER_APK_SIGNER_VER="1.3.0"
-RUN wget -nv -O uber-apk-signer.jar "https://github.com/patrickfav/uber-apk-signer/releases/download/v${UBER_APK_SIGNER_VER}/uber-apk-signer-${UBER_APK_SIGNER_VER}.jar"
 RUN install -d /opt/uber-apk-signer
-RUN install -m644 uber-apk-signer.jar /opt/uber-apk-signer/
+RUN wget -nv -O /opt/uber-apk-signer/uber-apk-signer.jar https://github.com/patrickfav/uber-apk-signer/releases/download/v${UBER_APK_SIGNER_VER}/uber-apk-signer-${UBER_APK_SIGNER_VER}.jar
+RUN chmod 644 /opt/uber-apk-signer/uber-apk-signer.jar
+RUN ln -snf /opt/uber-apk-signer/uber-apk-signer /usr/local/bin/
 COPY --chmod=755 <<'EOF' /opt/uber-apk-signer/uber-apk-signer
 #!/bin/sh
 exec java -jar /opt/uber-apk-signer/uber-apk-signer.jar "$@"
 EOF
-
-RUN ln -snfr /opt/uber-apk-signer/uber-apk-signer /usr/local/bin/
-RUN rm uber-apk-signer.jar
 
 # Cleanup.
 RUN rm -vrf ~/.android/cache
