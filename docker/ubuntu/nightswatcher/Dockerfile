@@ -38,7 +38,7 @@ COPY --chmod=755 nightswatcher/nightswatcher.py /
 RUN mkdir -p /data/ota /data/release_download /metadata
 
 # Cleanup.
-RUN apt-get remove -y --auto-remove \
+RUN apt-get purge -y --auto-remove \
     wget \
     ;
 RUN rm /usr/local/bin/{uv,uvx}

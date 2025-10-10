@@ -239,7 +239,7 @@ EOF
 # }}}
 
 # Cleanup.
-RUN apt-get remove -y --auto-remove python3-pip
+RUN apt-get purge -y --auto-remove python3-pip
 RUN rm -rf \
     ~${USER}/.cache \
     ~root/.cache \
