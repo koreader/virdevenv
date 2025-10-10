@@ -1,1 +1,1 @@
-RUN --mount=dst=/ctx /ctx/scripts/install_x-tools.sh cervantes
+RUN --mount=src=scripts,dst=/scripts /scripts/install_x-tools.sh cervantes
