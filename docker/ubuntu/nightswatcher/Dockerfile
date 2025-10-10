@@ -7,7 +7,7 @@ RUN apt-get install --no-install-recommends -y \
     unzip \
     wget \
     ;
-RUN --mount=dst=/ctx /ctx/scripts/install_uv.sh
+RUN --mount=src=scripts,dst=/scripts /scripts/install_uv.sh
 
 # Install zipalign.
 # NOTE: used by uber-apk-signer, which already vendors-in binaries for some platforms, but not Linux AArch64.
