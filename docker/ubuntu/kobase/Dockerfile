@@ -7,7 +7,11 @@ RUN apt-get upgrade -y
 RUN apt-get install --no-install-recommends -y \
     bash-completion \
     build-essential \
+    bzip2 \
     ca-certificates \
+    cmake \
+    g++ \
+    gcc \
     gettext \
     git \
     less \
@@ -15,6 +19,7 @@ RUN apt-get install --no-install-recommends -y \
     sudo \
     unzip \
     wget \
+    xz-utils \
     zstd \
     ;
 
@@ -28,6 +33,50 @@ RUN usermod -aG sudo ${USER}
 RUN echo "${USER} ALL=(ALL:ALL) NOPASSWD:ALL" | EDITOR='tee -a' visudo
 WORKDIR ${WORKDIR}
 COPY --chown=${USER} kobase/bashrc .bashrc
+
+# MAKE. {{{
+
+ARG MAKE_VER="4.4.1"
+RUN wget -nv -O - https://ftpmirror.gnu.org/make/make-${MAKE_VER}.tar.gz | tar xz
+WORKDIR make-${MAKE_VER}
+RUN ./configure --disable-nls --without-guile
+RUN make -j"$(nproc)"
+RUN install -m755 --strip make /usr/local/bin/
+RUN apt-get purge -y --auto-remove make
+WORKDIR ..
+RUN rm -rf make-*
+RUN make --version
+
+# }}}
+
+# NINJA. {{{
+
+ARG NINJA_VER="1.13.1"
+RUN wget -nv -O - https://github.com/ninja-build/ninja/archive/refs/tags/v${NINJA_VER}.tar.gz | tar xz
+WORKDIR ninja-${NINJA_VER}
+# Tweak annoying "jobserver mode detected" status message.
+RUN patch -p1 <<'EOF'
+--- a/src/ninja.cc
++++ b/src/ninja.cc
+@@ -1576,7 +1576,7 @@
+     return result;
+   }
+ 
+-  if (config_.verbosity > BuildConfig::NO_STATUS_UPDATE) {
++  if (config_.verbosity > BuildConfig::VERBOSE) {
+     status->Info("Jobserver mode detected: %s", makeflags);
+   }
+ 
+EOF
+
+RUN cmake -Bbuild -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release
+RUN make -C build -j"$(nproc)"
+RUN install -m755 --strip build/ninja /usr/local/bin/
+WORKDIR ..
+RUN rm -rf ninja-*
+RUN ninja --version
+
+# }}}
 
 # LUAJIT. {{{
 
@@ -139,7 +188,6 @@ ARG MISC_TOOLS="\
     jq \
     libtool \
     nasm \
-    ninja-build \
     openssh-client \
     p7zip-full \
     patch \
