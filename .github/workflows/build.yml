@@ -92,13 +92,13 @@ jobs:
             # Required variables are not setup, skip building unless we were triggered
             # by workflow dispatch, in which case we force rebuilding and don't publish.
             [[ '${{ github.event.inputs != null }}' = 'true' ]] || exit 0
-            rebuild=1 publish= registry='docker.io' username='${{ github.actor }}'
+            rebuild=true publish= registry='docker.io' username='${{ github.actor }}'
           else
             registry='${{ vars.DOCKER_REGISTRY }}' username='${{ vars.DOCKER_USERNAME }}'
-            rebuild=${{ github.event.inputs != null && inputs.rebuild && 1 || '' }}
-            publish=${{ (github.event.inputs == null && github.ref == 'refs/heads/master' || inputs.publish) && 1 || '' }}
+            rebuild=${{ github.event.inputs != null && inputs.rebuild && 'true' || '' }}
+            publish=${{ (github.event.inputs == null && github.ref == 'refs/heads/master' || inputs.publish) && 'true' || '' }}
           fi
-          nodeps=${{ github.event.inputs != null && inputs.nodeps && 1 || '' }}
+          nodeps=${{ github.event.inputs != null && inputs.nodeps && 'true' || '' }}
           make -s -C docker/ubuntu --output-sync -j$(nproc) \
             ${nodeps:+IMAGE_BASE=scratch} ${rebuild:+REGCTL=false} \
             REGISTRY="${registry}" USER="${username}" \
