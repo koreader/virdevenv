@@ -7,6 +7,7 @@ DRY_RUN := $(findstring n,$(firstword -$(MAKEFLAGS)))
 
 BUILDER ?= docker
 REGISTRY ?= docker.io
+NAMESPACE ?= $(USER)
 PLATFORM ?=
 
 REGCTL ?= regctl
@@ -102,7 +103,7 @@ $$(error $1: $v not defined)
 endif
 )
 
-$(eval IMAGE := $(REGISTRY)/$(USER)/$1:$(VERSION))
+$(eval IMAGE := $(REGISTRY)/$(NAMESPACE)/$1:$(VERSION))
 
 $1_DOCKERFILE := $$(call DOCKERFILE,$1/Dockerfile)
 
@@ -132,7 +133,7 @@ $1/hadolint: build/$1.dockerfile
 
 ifeq (docker,$(BUILDER))
 $1/latest:
-	$(BUILDER) buildx imagetools create $(IMAGE) --tag $(REGISTRY)/$(USER)/$1:latest
+	$(BUILDER) buildx imagetools create $(IMAGE) --tag $(REGISTRY)/$(NAMESPACE)/$1:latest
 endif
 
 $1/lint: $1/hadolint
@@ -181,8 +182,8 @@ TARGETS:
 	make ci-matrix        output CI build matrix
 
 VARIABLES:
-	USER                  repository name (e.g. koreader, default: $(USER))
-	REGISTRY              remote registry to push too (default: $(REGISTRY))
+	REGISTRY              docker registry (e.g. docker.io, default: $(REGISTRY))
+	NAMESPACE             docker namespace (e.g. koreader, default: $(NAMESPACE))
 	PLATFORM              platform to build the image for (default: current system)
 
 IMAGES:$(foreach i,$(IMAGES),$(newline)	$(i))
