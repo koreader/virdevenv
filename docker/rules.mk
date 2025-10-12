@@ -51,7 +51,7 @@ IMAGES = $(patsubst %/,%,$(dir $(wildcard */Dockerfile)))
 IMAGE_IDS =
 BASE_IDS =
 
-PHONIES = all ci-matrix ci-matrix/ lint prune
+PHONIES = all ci-matrix lint prune
 
 # Image rules. {{{
 
@@ -187,7 +187,16 @@ hadolint: $(IMAGES:%=%/hadolint)
 
 lint: $(IMAGES:%=%/lint)
 
-ci-matrix ci-matrix/: $(foreach t,$(IMAGE_IDS),$(call target_escape,ci-matrix/$t))
+define finalize_ci_matrix
+  jq --sort-keys
+  --arg publish '$(PUBLISH)'
+  --arg registry '$(REGISTRY)'
+  --arg namespace '$(NAMESPACE)'
+  --from-file $(TOP)/docker/ci_matrix.jq
+endef
+
+ci-matrix: | build/
+	$(MAKE) --no-print-directory --output-sync --quiet $(foreach t,$(or $(CI_MATRIX_IMAGES),$(IMAGE_IDS)),$(call target_escape,ci-matrix/$t)) | sed 's/^/[/;s/, $$/]/' | $(strip $(finalize_ci_matrix)) >build/ci_matrix.json
 
 $(foreach t,$(filter-out $(IMAGE_IDS),$(BASE_IDS)),$(call target_escape,ci-matrix/$t)):
 

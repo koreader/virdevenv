@@ -47,15 +47,21 @@ jobs:
 
     env:
       MAKEFLAGS: -s REGISTRY=${{ inputs.registry }} NAMESPACE=${{ inputs.namespace }} PLATFORM=${{ matrix.platform }}
+      TAR: ${{ inputs.id }} ${{ matrix.platform }}.tar
 
     steps:
 
-      - name: Checkout
+      - &CHECKOUT
+        name: Checkout
         uses: actions/checkout@v5
         with:
           clean: false
           fetch-depth: 1
           show-progress: false
+
+      - &INSTALL_REGCTL
+        name: Install regctl
+        run: ./docker/ubuntu/scripts/install_regctl.sh
 
       - name: Download base image from artifacts
         if: inputs.base
@@ -71,14 +77,29 @@ jobs:
         run: make -C docker/ubuntu ${{ inputs.image }}
 
       - name: Save image
-        run: make -C docker/ubuntu ${{ inputs.image }}/save TAR='${{ runner.temp }}/${{ inputs.id }} ${{ matrix.platform }}.tar'
+        run: make -C docker/ubuntu ${{ inputs.image }}/save TAR="${PWD}/${TAR}"
+
+      - name: Compress image layers
+        env:
+          COMPRESSION: zstd
+        run: |
+          du -h "$TAR"
+          printf '::group::compress\n'
+          set -x
+          regctl image import ocidir://oci "${TAR}"
+          regctl image mod --layer-compress ${COMPRESSION} ocidir://oci --create ocidir://oci:${COMPRESSION}
+          regctl image export --name ${{ inputs.image }} ocidir://oci:${COMPRESSION} "${TAR}"
+          set +x
+          printf '::endgroup::\n'
+          du -h "$TAR"
 
       - name: Upload image to artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.id }} ${{ matrix.platform }}
-          path: ${{ runner.temp }}/${{ inputs.id }} ${{ matrix.platform }}.tar
+          path: ${{ env.TAR }}
           if-no-files-found: error
+          compression-level: 0
           retention-days: 1
 
 
@@ -93,15 +114,9 @@ jobs:
 
     steps:
 
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          clean: false
-          fetch-depth: 1
-          show-progress: false
+      - *CHECKOUT
 
-      - name: Install regctl
-        run: ./docker/ubuntu/scripts/install_regctl.sh
+      - *INSTALL_REGCTL
 
       - name: Log in to the registry
         env:
@@ -117,7 +132,7 @@ jobs:
       - name: Aggregate & publish final image
         run: |
           set -x
-          command=(regctl index create)
+          command=(regctl index create -v info)
           for tar in *.tar; do
             ocidir="ocidir://${tar%.tar}"
             regctl image import "${ocidir}" "${tar}"
