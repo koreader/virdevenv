@@ -96,40 +96,25 @@ jobs:
           DOCKER_REGISTRY: *DOCKER_REGISTRY
           DOCKER_NAMESPACE: *DOCKER_NAMESPACE
         run: |
-          set -x
           exec 2>&1 # avoid jumbled output…
-          images=(${{ inputs.images && inputs.images || '""' }})
+          printf '::group::generate\n'
+          set -x
+          images=(${{ inputs.images }})
           registry='${{ inputs.registry || env.DOCKER_REGISTRY }}'
           namespace='${{ inputs.namespace || env.DOCKER_NAMESPACE }}'
           rebuild=${{ github.event.inputs != null && inputs.rebuild && 'true' || '' }}
           publish=${{ (github.event.inputs == null && github.ref == vars.DOCKER_PUBLISH_REF || inputs.publish) && 'true' || '' }}
           nodeps=${{ github.event.inputs != null && inputs.nodeps && 'true' || '' }}
-          make -s -C docker/ubuntu --output-sync -j$(nproc) \
+          matrix=docker/ubuntu/build/ci_matrix.json
+          make -s -C docker/ubuntu -j$(nproc) \
+            REGISTRY="${registry}" NAMESPACE="${namespace}" PUBLISH="${publish}" \
             ${nodeps:+IMAGE_BASE=scratch} ${rebuild:+REGCTL=false} \
-            REGISTRY="${registry}" NAMESPACE="${namespace}" \
-            ${images[@]/#/ci-matrix/} | tee base_matrix
-          sed -i 's/^/[ /;s/, $/ ]\n/' base_matrix; cat base_matrix
-          jq --color-output <base_matrix
-          if [[ -n "${publish}" ]]; then
-            # Just strip `.base` members.
-            jq <base_matrix >final_matrix '[ .[] | .base |= select(false) ]'
-          else
-            jq <base_matrix >final_matrix --arg registry "${registry}" --arg namespace "${namespace}" '
-              # Save a reference to top object.
-              . as $o |
-              # Build a mapping of images being built.
-              [ .[] | { key: (.image), value: true } ] | from_entries as $images |
-              # And produce an updated version of the top object input with
-              # each `.base` member stripped when not one the built images.
-              # NOTE: we also convert an image base name to its build ID.
-              [$o | .[] | .base |= (select(. as $i | $images | has($i)) |
-                                    ltrimstr($registry + "/" + $namespace + "/") |
-                                    gsub("[/:]"; " ")) ]
-              '
-          fi
-          jq --color-output <final_matrix
-          jq --compact-output <final_matrix | sed 's/^/matrix=/' | tee -a "${GITHUB_OUTPUT}"
+            ${images:+"CI_MATRIX_IMAGES=${images[*]}"} ci-matrix
+          jq --compact-output <"${matrix}" | sed 's/^/matrix=/' | tee -a "${GITHUB_OUTPUT}"
           printf '%s=%s\n' publish "${publish:-false}" registry "${registry}" namespace "${namespace}" | tee -a "${GITHUB_OUTPUT}"
+          set +x
+          printf '::endgroup::\n'
+          jq --color-output <"${matrix}"
 
     outputs:
       matrix: ${{ steps.generate.outputs.matrix }}
