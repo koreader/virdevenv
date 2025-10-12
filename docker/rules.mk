@@ -5,7 +5,6 @@ TOP := $(abspath ../$(dir $(lastword $(MAKEFILE_LIST))))
 
 DRY_RUN := $(findstring n,$(firstword -$(MAKEFLAGS)))
 
-BUILDER ?= docker
 REGISTRY ?= docker.io
 NAMESPACE ?= $(USER)
 PLATFORM ?=
@@ -54,34 +53,18 @@ BASE_IDS =
 
 PHONIES = all ci-matrix ci-matrix/ lint prune
 
-# Docker support. {{{
-
-define docker_build
-docker build
-endef
-
-# }}}
-
-# Podman support. {{{
-
-define podman_build
-buildah build --format=docker --layers
-endef
-
-# }}}
-
 # Image rules. {{{
 
 platform_arg = $(if $(PLATFORM),--platform $(PLATFORM))
 
 define image_build
-	$($(BUILDER)_build)
+	docker buildx build
 	$(platform_arg)
 	--build-arg BASE=$(IMAGE_BASE)
 	--build-arg USER=$(IMAGE_USER)
 	--build-arg WORKDIR=$(IMAGE_WORKDIR)
 	$(patsubst %,--build-arg %,$(strip $(BUILD_ARGS)))
-	-t $(IMAGE)
+	--tag $(IMAGE)
 	--progress plain
 	--file
 endef
@@ -125,30 +108,28 @@ $(call target_escape,ci-matrix/$(IMAGE)) ci-matrix/$1: $(call target_escape,ci-m
 	$(REGCTL) image digest $(IMAGE) 1>&2 || printf '%s' '{ "id": "$1 $(VERSION)", "image": "$(IMAGE)", "base": "$(IMAGE_BASE)", "platform": "$(subst ",\",$(subst $(empty) $(empty),,$(call to_json_array,$(IMAGE_PLATFORM))))" }, '
 
 $1/inspect:
-	$(BUILDER) image inspect $(platform_arg) $(IMAGE) | jq --sort-keys
+	docker image inspect $(platform_arg) $(IMAGE) | jq --sort-keys
 
 $1/hadolint: build/$1.dockerfile
 	$$(info hadolint $$<)
 	@hadolint --config $(TOP)/.hadolint.yaml $$<
 
-ifeq (docker,$(BUILDER))
 $1/latest:
-	$(BUILDER) buildx imagetools create $(IMAGE) --tag $(REGISTRY)/$(NAMESPACE)/$1:latest
-endif
+	docker buildx imagetools create $(IMAGE) --tag $(REGISTRY)/$(NAMESPACE)/$1:latest
 
 $1/lint: $1/hadolint
 
 $1/push:
-	$(BUILDER) push $(platform_arg) $(IMAGE)
+	docker push $(platform_arg) $(IMAGE)
 
 $1/run:
-	$(BUILDER) run $(platform_arg) --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(IMAGE)
+	docker run $(platform_arg) --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(IMAGE)
 
 $1/save:
-	$(BUILDER) save $(platform_arg) --output '$(or $(TAR),$1.tar)' $(IMAGE)
+	docker save $(platform_arg) --output '$(or $(TAR),$1.tar)' $(IMAGE)
 
 $1/shell:
-	$(BUILDER) run $(platform_arg) --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(IMAGE) $(IMAGE_SHELL)
+	docker run $(platform_arg) --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(IMAGE) $(IMAGE_SHELL)
 
 PHONIES += build/$1.dockerfile
 
@@ -195,7 +176,7 @@ usage:
 # }}}
 
 prune:
-	$(BUILDER) system prune -f
+	docker system prune -f
 
 build/:
 	mkdir -p $@
