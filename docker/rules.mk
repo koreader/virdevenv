@@ -189,7 +189,6 @@ lint: $(IMAGES:%=%/lint)
 
 define finalize_ci_matrix
   jq --sort-keys
-  --arg publish '$(PUBLISH)'
   --arg registry '$(REGISTRY)'
   --arg namespace '$(NAMESPACE)'
   --from-file $(TOP)/docker/ci_matrix.jq

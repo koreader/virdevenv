@@ -107,17 +107,19 @@ jobs:
           nodeps=${{ github.event.inputs != null && inputs.nodeps && 'true' || '' }}
           matrix=docker/ubuntu/build/ci_matrix.json
           make -s -C docker/ubuntu -j$(nproc) \
-            REGISTRY="${registry}" NAMESPACE="${namespace}" PUBLISH="${publish}" \
+            REGISTRY="${registry}" NAMESPACE="${namespace}" \
             ${nodeps:+IMAGE_BASE=scratch} ${rebuild:+REGCTL=false} \
             ${images:+"CI_MATRIX_IMAGES=${images[*]}"} ci-matrix
           jq --compact-output <"${matrix}" | sed 's/^/matrix=/' | tee -a "${GITHUB_OUTPUT}"
-          printf '%s=%s\n' publish "${publish:-false}" registry "${registry}" namespace "${namespace}" | tee -a "${GITHUB_OUTPUT}"
+          max_parallel="$(jq 'if [.[]|.base]|any then 1 else length end' "${matrix}")"
+          printf '%s=%s\n' max_parallel "${max_parallel}" publish "${publish:-false}" registry "${registry}" namespace "${namespace}" | tee -a "${GITHUB_OUTPUT}"
           set +x
           printf '::endgroup::\n'
           jq --color-output <"${matrix}"
 
     outputs:
       matrix: ${{ steps.generate.outputs.matrix }}
+      max_parallel: ${{ steps.generate.outputs.max_parallel }}
       publish: ${{ steps.generate.outputs.publish }}
       registry: ${{ steps.generate.outputs.registry }}
       namespace: ${{ steps.generate.outputs.namespace }}
@@ -132,7 +134,7 @@ jobs:
       contains('skipped success', needs.lint.result)
 
     strategy:
-      max-parallel: 1
+      max-parallel: ${{ fromJSON(needs.prepare.outputs.max_parallel) }}
       matrix:
         include: ${{ fromJSON(needs.prepare.outputs.matrix) }}
 

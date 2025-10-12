@@ -6,9 +6,8 @@
 # each `.base` member stripped when not one of the built images.
 # NOTE: we also convert an image base name to its build ID.
 [ $o | .[] | . as $i |
-  # When publishing, the base image will be available from the registry.
   .base |= (
-    select(if $publish == "" then $images | has($i | .base) else false end) |
+    select($images | has($i | .base)) |
     ltrimstr($registry + "/" + $namespace + "/") | gsub("[/:]"; " ")
   )
 ]
