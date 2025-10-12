@@ -8,7 +8,7 @@ UBUNTU_IMAGE = docker.io/library/ubuntu:jammy
 
 define DEFAULT_IMAGE_PRE
 USER 0
-WORKDIR $${WORKDIR}
+WORKDIR /root
 ARG DEBIAN_FRONTEND=noninteractive
 ARG TARGETPLATFORM
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
