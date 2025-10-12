@@ -64,13 +64,13 @@ jobs:
         run: ./docker/ubuntu/scripts/install_regctl.sh
 
       - name: Download base image from artifacts
-        if: inputs.base
+        if: inputs.base && !inputs.publish
         uses: actions/download-artifact@v5
         with:
           name: ${{ inputs.base }} ${{ matrix.platform }}
 
       - name: Load base image
-        if: inputs.base
+        if: inputs.base && !inputs.publish
         run: docker load -i '${{ inputs.base }} ${{ matrix.platform }}.tar'
 
       - name: Build image
