@@ -9,6 +9,14 @@ on:
   pull_request:
   workflow_dispatch:
     inputs:
+      registry:
+        description: 'Docker registry'
+        default: &DOCKER_REGISTRY docker.io
+        type: string
+      namespace:
+        description: 'Docker namespace'
+        default: &DOCKER_NAMESPACE koreader
+        type: string
       images:
         description: 'Build the specified images (empty: build all)'
         required: false
@@ -84,20 +92,17 @@ jobs:
 
       - name: Generate outputs
         id: generate
+        env:
+          DOCKER_REGISTRY: *DOCKER_REGISTRY
+          DOCKER_NAMESPACE: *DOCKER_NAMESPACE
         run: |
           set -x
           exec 2>&1 # avoid jumbled output…
           images=(${{ inputs.images && inputs.images || '""' }})
-          if [[ -z '${{ vars.DOCKER_REGISTRY }}' ]] || [[ -z '${{ vars.DOCKER_NAMESPACE }}' ]]; then
-            # Required variables are not setup, skip building unless we were triggered
-            # by workflow dispatch, in which case we force rebuilding and don't publish.
-            [[ '${{ github.event.inputs != null }}' = 'true' ]] || exit 0
-            rebuild=true publish= registry='docker.io' namespace='${{ github.actor }}'
-          else
-            registry='${{ vars.DOCKER_REGISTRY }}' namespace='${{ vars.DOCKER_NAMESPACE }}'
-            rebuild=${{ github.event.inputs != null && inputs.rebuild && 'true' || '' }}
-            publish=${{ (github.event.inputs == null && github.ref == 'refs/heads/master' || inputs.publish) && 'true' || '' }}
-          fi
+          registry='${{ inputs.registry || env.DOCKER_REGISTRY }}'
+          namespace='${{ inputs.namespace || env.DOCKER_NAMESPACE }}'
+          rebuild=${{ github.event.inputs != null && inputs.rebuild && 'true' || '' }}
+          publish=${{ (github.event.inputs == null && github.ref == vars.DOCKER_PUBLISH_REF || inputs.publish) && 'true' || '' }}
           nodeps=${{ github.event.inputs != null && inputs.nodeps && 'true' || '' }}
           make -s -C docker/ubuntu --output-sync -j$(nproc) \
             ${nodeps:+IMAGE_BASE=scratch} ${rebuild:+REGCTL=false} \
