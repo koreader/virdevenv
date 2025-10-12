@@ -65,7 +65,8 @@ RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Setup shell environment.
 ARG JDK NDK
-RUN tee -a ~/.bashrc /root/.bashrc <<EOF
+# NOTE: using `~${USER}/.bashrc` does not work (command ends up with `'~ko/.bashrc'`).
+RUN tee -a /home/${USER}/.bashrc /root/.bashrc <<EOF
 export JAVA_HOME='/usr/lib/jvm/java-$JDK-openjdk-amd64'
 export ANDROID_NDK_HOME='/opt/$NDK'
 export ANDROID_HOME='/opt/android-sdk-linux'
