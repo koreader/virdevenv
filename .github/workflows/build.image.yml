@@ -42,7 +42,7 @@ jobs:
       matrix:
         platform: ${{ fromJSON(inputs.platform) }}
 
-    name: ${{ matrix.platform }}
+    name: 🔨 ${{ inputs.id }} ${{ matrix.platform }}
     runs-on: ${{ startsWith(matrix.platform, 'arm') && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
 
     env:
@@ -108,7 +108,7 @@ jobs:
     needs: build
     if: inputs.publish
 
-    name: publish
+    name: 🚀 ${{ inputs.id }}
     runs-on: ubuntu-latest
     environment: docker
 

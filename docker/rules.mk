@@ -51,7 +51,7 @@ IMAGES = $(patsubst %/,%,$(dir $(wildcard */Dockerfile)))
 IMAGE_IDS =
 BASE_IDS =
 
-PHONIES = all ci-matrix lint prune
+PHONIES = all ci-matrices lint prune
 
 # Image rules. {{{
 
@@ -103,7 +103,7 @@ BASE_IDS += $(IMAGE_BASE)
 $1 $1/: build/$1.dockerfile
 	$(strip $(call image_build,$1)) $$< .
 
-$(call target_escape,ci-matrix/$(IMAGE)) ci-matrix/$1: $(call target_escape,ci-matrix/$(IMAGE_BASE))
+$(call target_escape,$(IMAGE)/ci) $1/ci: $(call target_escape,$(IMAGE_BASE)/ci)
 	@echo '$(IMAGE)' 1>&2
 	$(REGCTL) image digest $(IMAGE) 1>&2 || printf '%s' '{ "id": "$1 $(VERSION)", "image": "$(IMAGE)", "base": "$(IMAGE_BASE)", "platform": "$(subst ",\",$(subst $(empty) $(empty),,$(call to_json_array,$(IMAGE_PLATFORM))))" }, '
 
@@ -160,7 +160,7 @@ TARGETS:
 	make IMAGE/save       save image to tar
 	make IMAGE/lastest    tag image version has latest (docker only)
 	make prune            prune dangling images
-	make ci-matrix        output CI build matrix
+	make ci-matrices      output CI build matrices
 
 VARIABLES:
 	REGISTRY              docker registry (e.g. docker.io, default: $(REGISTRY))
@@ -187,17 +187,17 @@ hadolint: $(IMAGES:%=%/hadolint)
 
 lint: $(IMAGES:%=%/lint)
 
-define finalize_ci_matrix
+define finalize_ci_matrices
   jq --sort-keys
   --arg registry '$(REGISTRY)'
   --arg namespace '$(NAMESPACE)'
-  --from-file $(TOP)/docker/ci_matrix.jq
+  --from-file $(TOP)/docker/ci_matrices.jq
 endef
 
-ci-matrix: | build/
-	$(MAKE) --no-print-directory --output-sync --quiet $(foreach t,$(or $(CI_MATRIX_IMAGES),$(IMAGE_IDS)),$(call target_escape,ci-matrix/$t)) | sed 's/^/[/;s/, $$/]/' | $(strip $(finalize_ci_matrix)) >build/ci_matrix.json
+ci-matrices: | build/
+	$(MAKE) --no-print-directory --output-sync --quiet $(foreach t,$(or $(CI_IMAGES),$(IMAGE_IDS)),$(call target_escape,$t/ci)) | sed 's/^/[/;s/, $$/]/' | $(strip $(finalize_ci_matrices)) >build/ci_matrices.json
 
-$(foreach t,$(filter-out $(IMAGE_IDS),$(BASE_IDS)),$(call target_escape,ci-matrix/$t)):
+$(foreach t,$(filter-out $(IMAGE_IDS),$(BASE_IDS)),$(call target_escape,$t/ci)):
 
 .PHONY: $(PHONIES)
 
