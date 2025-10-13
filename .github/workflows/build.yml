@@ -103,23 +103,22 @@ jobs:
           registry='${{ inputs.registry || env.DOCKER_REGISTRY }}'
           namespace='${{ inputs.namespace || env.DOCKER_NAMESPACE }}'
           rebuild=${{ github.event.inputs != null && inputs.rebuild && 'true' || '' }}
-          publish=${{ (github.event.inputs == null && github.ref == vars.DOCKER_PUBLISH_REF || inputs.publish) && 'true' || '' }}
+          publish=${{ (github.event.inputs == null && github.ref == vars.DOCKER_PUBLISH_REF || inputs.publish) && 'true' || 'false' }}
           nodeps=${{ github.event.inputs != null && inputs.nodeps && 'true' || '' }}
-          matrix=docker/ubuntu/build/ci_matrix.json
           make -s -C docker/ubuntu -j$(nproc) \
             REGISTRY="${registry}" NAMESPACE="${namespace}" \
             ${nodeps:+IMAGE_BASE=scratch} ${rebuild:+REGCTL=false} \
-            ${images:+"CI_MATRIX_IMAGES=${images[*]}"} ci-matrix
-          jq --compact-output <"${matrix}" | sed 's/^/matrix=/' | tee -a "${GITHUB_OUTPUT}"
-          max_parallel="$(jq 'if [.[]|.base]|any then 1 else length end' "${matrix}")"
-          printf '%s=%s\n' max_parallel "${max_parallel}" publish "${publish:-false}" registry "${registry}" namespace "${namespace}" | tee -a "${GITHUB_OUTPUT}"
+            ${images:+"CI_IMAGES=${images[*]}"} ci-matrices
+          jq <docker/ubuntu/build/ci_matrices.json >outputs \
+            --argjson publish "${publish}" --arg registry "${registry}" --arg namespace "${namespace}" \
+            '{ publish: $publish, registry: $registry, namespace: $namespace, matrices: . }'
+          jq --raw-output '.matrices[].matrix |= tostring | to_entries[] | .key + "=" + (.value|tostring)' <outputs | tee -a "${GITHUB_OUTPUT}"
           set +x
           printf '::endgroup::\n'
-          jq --color-output <"${matrix}"
+          jq --color-output <outputs
 
     outputs:
-      matrix: ${{ steps.generate.outputs.matrix }}
-      max_parallel: ${{ steps.generate.outputs.max_parallel }}
+      matrices: ${{ steps.generate.outputs.matrices }}
       publish: ${{ steps.generate.outputs.publish }}
       registry: ${{ steps.generate.outputs.registry }}
       namespace: ${{ steps.generate.outputs.namespace }}
@@ -130,27 +129,24 @@ jobs:
     needs: [prepare, lint]
     if: |
       !cancelled() &&
-      needs.prepare.outputs.matrix &&
+      needs.prepare.outputs.matrices &&
       contains('skipped success', needs.lint.result)
 
     strategy:
-      max-parallel: ${{ fromJSON(needs.prepare.outputs.max_parallel) }}
+      max-parallel: 1
       matrix:
-        include: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+        include: ${{ fromJSON(needs.prepare.outputs.matrices) }}
 
-    name: Build ${{ matrix.id }}
+    name: ${{ strategy.job-index }}
 
-    uses: ./.github/workflows/build.image.yml
+    uses: ./.github/workflows/build.matrix.yml
     secrets:
       # Yep, this is required to allow the use of the `docker` environment
       # secret of the same name in the called workflow… Pretty evident,
       # right? ¯\_(ツ)_/¯
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
     with:
-      id: ${{ matrix.id }}
-      image: ${{ matrix.image }}
-      base: ${{ matrix.base }}
-      platform: ${{ matrix.platform }}
       publish: ${{ fromJSON(needs.prepare.outputs.publish) }}
       registry: ${{ needs.prepare.outputs.registry }}
       namespace: ${{ needs.prepare.outputs.namespace }}
+      matrix: ${{ matrix.matrix }}

@@ -1,0 +1,48 @@
+name: Build Matrix
+
+on:
+  workflow_call:
+    inputs:
+      publish:
+        required: true
+        type: boolean
+      registry:
+        required: true
+        type: string
+      namespace:
+        required: true
+        type: string
+      matrix:
+        required: true
+        type: string
+    secrets:
+      DOCKER_TOKEN:
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+
+jobs:
+
+
+  build:
+
+    strategy:
+      matrix:
+        include: ${{ fromJSON(inputs.matrix) }}
+
+    name: ${{ matrix.id }}
+
+    uses: ./.github/workflows/build.image.yml
+    secrets:
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+    with:
+      id: ${{ matrix.id }}
+      image: ${{ matrix.image }}
+      base: ${{ matrix.base }}
+      platform: ${{ matrix.platform }}
+      publish: ${{ inputs.publish }}
+      registry: ${{ inputs.registry }}
+      namespace: ${{ inputs.namespace }}
