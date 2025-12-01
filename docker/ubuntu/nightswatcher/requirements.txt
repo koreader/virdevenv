@@ -1,4 +1,4 @@
-falcon==4.1.0
+falcon==4.2.0
 gevent==25.9.1
 gunicorn==23.0.0
 requests==2.32.5
