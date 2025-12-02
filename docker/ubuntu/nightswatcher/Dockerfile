@@ -1,12 +1,24 @@
 RUN apt-get update
 RUN apt-get upgrade -y
+ARG BUILD_DEPS="\
+    chrpath \
+    cmake \
+    file \
+    g++ \
+    git \
+    make \
+    meson \
+    ninja-build \
+    patch \
+    pkg-config \
+    wget \
+"
 RUN apt-get install --no-install-recommends -y \
     ca-certificates \
     curl \
     python3 \
     unzip \
-    wget \
-    ;
+    $BUILD_DEPS
 RUN --mount=src=scripts,dst=/scripts /scripts/install_uv.sh
 
 # Install zipalign.
@@ -29,6 +41,18 @@ COPY --chmod=755 <<'EOF' /opt/uber-apk-signer/uber-apk-signer
 exec java -jar /opt/uber-apk-signer/uber-apk-signer.jar "$@"
 EOF
 
+# Install kotasync.
+ARG KOTASYNC_REV="022c719d02657dced9c9e1c722a0549b3f7fdc8d"
+RUN wget -nv -O - https://github.com/koreader/koreader-base/archive/${KOTASYNC_REV}.tar.gz | tar xz
+WORKDIR koreader-base-${KOTASYNC_REV}/kotasync
+RUN mkdir -p ../thirdparty/kpvcrlib/crengine/cr3gui/data/dict
+RUN make -j"$(nproc)" OUTPUT_DIR=build
+RUN mv build/AppDir /usr/local/share/kotasync
+RUN chmod og=rX -R /usr/local/share/kotasync
+RUN ln -s ../share/kotasync/AppRun /usr/local/bin/kotasync
+WORKDIR /
+RUN rm -rf koreader-base-*
+
 # Install nightswatcher's other python dependencies.
 # FIXME: replace single `requests` use in nightswatcher by a call to curl.
 RUN --mount=dst=/ctx uv pip install --no-cache --system -r /ctx/nightswatcher/requirements.txt
@@ -38,9 +62,7 @@ COPY --chmod=755 nightswatcher/nightswatcher.py /
 RUN mkdir -p /data/ota /data/release_download /metadata
 
 # Cleanup.
-RUN apt-get purge -y --auto-remove \
-    wget \
-    ;
+RUN apt-get purge -y --auto-remove $BUILD_DEPS
 RUN rm /usr/local/bin/{uv,uvx}
 
 # vim: sw=4
