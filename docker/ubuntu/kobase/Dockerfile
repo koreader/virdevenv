@@ -291,6 +291,7 @@ RUN apt-get purge -y --auto-remove python3-pip
 RUN rm -rf \
     ~${USER}/.cache \
     ~root/.cache \
+    /usr/bin/{cpack,ctest} \
     /usr/local/lib/luarocks/rocks-5.1/*/*/docs \
     /usr/share/cmake-*/Help \
     /usr/share/doc \
