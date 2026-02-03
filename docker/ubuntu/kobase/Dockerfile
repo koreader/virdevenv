@@ -170,8 +170,6 @@ RUN luarocks install luacov-coveralls ${LUACOV_COVERALLS_VER}
 
 # OTHER. {{{
 
-# NOTE: SDL2 is also needed for the tests.
-ARG APPIMAGE_DEPS="libsdl2-2.0-0"
 ARG FFI_CDECL_DEPS="gcc-11-plugin-dev"
 # GLib meson build needs distutils.
 ARG GLIB_DEPS="python3-distutils"
@@ -198,7 +196,6 @@ ARG MISC_TOOLS="\
     zip \
     "
 RUN apt-get install --no-install-recommends -y \
-    $APPIMAGE_DEPS \
     $FFI_CDECL_DEPS \
     $GLIB_DEPS \
     $MISC_TOOLS \
@@ -251,6 +248,99 @@ RUN wget -nv -O ninjatracing.zip https://github.com/nico/ninjatracing/archive/${
 RUN unzip -j ninjatracing.zip '*/ninjatracing'
 RUN install -m755 ninjatracing /usr/local/bin/
 RUN rm ninjatracing*
+
+# SDL {{{
+
+# Install runtime & build requirements.
+ARG SDL_DEPS="\
+    libdbus-1-3 \
+    libdecor-0-0 \
+    libdrm2 \
+    libegl1 \
+    libgbm1 \
+    libgles2 \
+    libopengl0 \
+    libudev1 \
+    liburing2 \
+    libvulkan1 \
+    libwayland-client0 \
+    libwayland-cursor0 \
+    libwayland-egl1 \
+    libx11-6 \
+    libxcursor1 \
+    libxext6 \
+    libxfixes3 \
+    libxi6 \
+    libxkbcommon0 \
+    libxrandr2 \
+    libxss1 \
+    "
+ARG SDL_BUILD_DEPS="\
+    libdbus-1-dev \
+    libdecor-0-dev \
+    libdrm-dev \
+    libegl1-mesa-dev \
+    libgbm-dev \
+    libgl1-mesa-dev \
+    libgles2-mesa-dev \
+    libibus-1.0-dev \
+    libudev-dev \
+    liburing-dev \
+    libwayland-dev \
+    libx11-dev \
+    libxcursor-dev \
+    libxext-dev \
+    libxfixes-dev \
+    libxi-dev \
+    libxkbcommon-dev \
+    libxrandr-dev \
+    libxss-dev \
+    libxtst-dev \
+    "
+RUN apt-get install --no-install-recommends -y $SDL_DEPS $SDL_BUILD_DEPS
+
+# SDL3
+ARG SDL3_VER="3.4.0"
+RUN wget -nv -O - https://github.com/libsdl-org/SDL/releases/download/release-${SDL3_VER}/SDL3-${SDL3_VER}.tar.gz | tar xz
+WORKDIR SDL3-${SDL3_VER}
+RUN cmake -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr \
+    -DSDL_ANDROID_JAR=OFF \
+    -DSDL_AUDIO=OFF \
+    -DSDL_CAMERA=OFF \
+    -DSDL_DIALOG=OFF \
+    -DSDL_EXAMPLES=OFF \
+    -DSDL_GPU=OFF \
+    -DSDL_HAPTIC=OFF \
+    -DSDL_INSTALL_CPACK=OFF \
+    -DSDL_INSTALL_DOCS=OFF \
+    -DSDL_LIBTHAI=OFF \
+    -DSDL_RPATH=OFF \
+    -DSDL_SENSOR=OFF \
+    -DSDL_SHARED=ON \
+    -DSDL_STATIC=OFF \
+    -DSDL_TEST_LIBRARY=OFF \
+    -DSDL_TRAY=OFF \
+    ;
+RUN ninja -C build -j"$(nproc)"
+RUN cmake --install build --strip
+WORKDIR ..
+RUN rm -rf SDL3*
+
+# SDL2_compat
+ARG SDL2_COMPAT_VER="2.32.62"
+RUN wget -nv -O - https://github.com/libsdl-org/sdl2-compat/releases/download/release-${SDL2_COMPAT_VER}/sdl2-compat-${SDL2_COMPAT_VER}.tar.gz | tar xz
+WORKDIR sdl2-compat-${SDL2_COMPAT_VER}
+RUN cmake -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DSDL2COMPAT_TESTS=OFF
+RUN ninja -C build -j"$(nproc)"
+RUN cmake --install build --strip
+WORKDIR ..
+RUN rm -rf sdl2-compat-*
+
+# Cleanup.
+RUN apt-get purge -y --auto-remove $SDL_BUILD_DEPS
+RUN rm -vrf /usr/bin/sdl2-config /usr/include/SDL* /usr/lib/"$(gcc -print-multiarch)"/{libSDL*.a,cmake/SDL*,pkgconfig/sdl*.pc} /usr/share/aclocal/sdl2.m4
+
+# }}}
 
 # shellcheck
 ARG SHELLCHECK_VERSION="0.11.0"
