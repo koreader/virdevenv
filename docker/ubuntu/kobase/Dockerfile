@@ -51,7 +51,7 @@ RUN make --version
 
 # NINJA. {{{
 
-ARG NINJA_VER="1.13.1"
+ARG NINJA_VER="1.13.2"
 RUN wget -nv -O - https://github.com/ninja-build/ninja/archive/refs/tags/v${NINJA_VER}.tar.gz | tar xz
 WORKDIR ninja-${NINJA_VER}
 # Tweak annoying "jobserver mode detected" status message.
