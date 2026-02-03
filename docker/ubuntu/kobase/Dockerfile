@@ -246,7 +246,7 @@ ARG MESON_VER="1.4.1"
 RUN pip install --no-cache-dir meson==${MESON_VER}
 
 # ninjatracing
-ARG NINJATRACING_VER="084212eaf68f25c70579958a2ed67fb4ec2a9ca4"
+ARG NINJATRACING_VER="fc2924576c9338ff0721f539e6dfa2f3983ae2db"
 RUN wget -nv -O ninjatracing.zip https://github.com/nico/ninjatracing/archive/${NINJATRACING_VER}.zip
 RUN unzip -j ninjatracing.zip '*/ninjatracing'
 RUN install -m755 ninjatracing /usr/local/bin/
