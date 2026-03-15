@@ -21,7 +21,7 @@ build_jobs=(
 )
 
 build_android_artifacts='
-koreader/koreader-android-arm64-@V@.apk
+koreader/koreader-android-arm-@V@.apk
 koreader/koreader-android-fdroid-latest
 '
 build_android_aarch64_artifacts="${build_android_artifacts//-arm-/-arm64-}"
