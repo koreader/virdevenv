@@ -9,13 +9,10 @@ build_jobs=(
     android
     android_aarch64
     android_x86
-    appimage
-    appimage_aarch64
-    appimage_armhf
-    debian
-    debian_arm64
-    debian_armhf
     kindlepw2
+    linux_aarch64
+    linux_armhf
+    linux_x86_64
     remarkable
     remarkable_aarch64
 )
@@ -27,27 +24,24 @@ koreader/koreader-android-fdroid-latest
 build_android_aarch64_artifacts="${build_android_artifacts//-arm-/-arm64-}"
 build_android_x86_artifacts="${build_android_artifacts//-arm-/-x86-}"
 
-build_appimage_artifacts='
-koreader/koreader-appimage-x86_64-@V@.AppImage
-'
-build_appimage_aarch64_artifacts="${build_appimage_artifacts//-x86_64-/-aarch64-}"
-build_appimage_armhf_artifacts="${build_appimage_artifacts//-x86_64-/-armhf-}"
-
 build_kindlepw2_artifacts='
 koreader/koreader-kindlepw2-@V@.targz
 koreader/koreader-kindlepw2-@V@.zip
 '
 
-build_debian_artifacts='
-koreader/koreader-@DV@-amd64.deb
+build_linux_x86_64_artifacts='
+koreader/koreader-@V@-x86_64.AppImage
+koreader/koreader_@DV@_amd64.deb
 koreader/koreader-linux-x86_64-@V@.tar.xz
 '
-build_debian_arm64_artifacts='
-koreader/koreader-@DV@-arm64.deb
+build_linux_aarch64_artifacts='
+koreader/koreader-@V@-aarch64.AppImage
+koreader/koreader_@DV@_arm64.deb
 koreader/koreader-linux-aarch64-@V@.tar.xz
 '
-build_debian_armhf_artifacts='
-koreader/koreader-@DV@-armhf.deb
+build_linux_armhf_artifacts='
+koreader/koreader-@V@-armhf.AppImage
+koreader/koreader_@DV@_armhf.deb
 koreader/koreader-linux-armv7l-@V@.tar.xz
 '
 
@@ -68,11 +62,12 @@ genpipe() {
     # v2025.10-29-g55bf6c9c5_2025-11-20  → 2025100029
     # v2025.10-167-g0c6d217e3_2026-03-05 → 2025100167
     intver="$(sed -E 's/^v//; s/-g.*//; s/\.//g; s/^[0-9]+$/&-000/; s/^([0-9]{6})-/\10-/; s/-(.{1})$/00\1/; s/-(.{2})$/0\1/; s/-//; ' <<<"${version}")"
-    # v2024.03.1                         → 2024.03.1
-    # v2025.10                           → 2025.10
-    # v2025.10-29-g55bf6c9c5_2025-11-20  → 2025.10-29
-    # v2025.10-167-g0c6d217e3_2026-03-05 → 2025.10-167
-    debver="$(sed -E 's/^v//;s/-g.*//' <<<"${version}")"
+    # v2024.03.1                         → 2024.03.1-1
+    # v2025.10                           → 2025.10-1
+    # v2025.10-29-g55bf6c9c5_2025-11-20  → 2025.10-29-g55bf6c9c5-1
+    # v2025.10-167-g0c6d217e3_2026-03-05 → 2025.10-167-g0c6d217e3-1
+    debver="$(sed -E 's/^v//; s/_.*//; s/$/-1/' <<<"${version}")"
+    printf '%s\t' "${version}" "${intver}" "${debver}"
     {
         cat <<EOF
  {
