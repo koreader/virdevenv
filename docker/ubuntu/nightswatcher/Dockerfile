@@ -31,7 +31,8 @@ EOF
 
 # Install nightswatcher's other python dependencies.
 # FIXME: replace single `requests` use in nightswatcher by a call to curl.
-RUN --mount=dst=/ctx uv pip install --no-cache --system -r /ctx/nightswatcher/requirements.txt
+COPY --chmod=644 nightswatcher/requirements.txt /
+RUN uv pip install --no-cache --system -r /requirements.txt
 
 # And finally the nightswatcher' script itself.
 COPY --chmod=755 nightswatcher/nightswatcher.py /
