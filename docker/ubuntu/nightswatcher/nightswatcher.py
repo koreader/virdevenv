@@ -17,7 +17,9 @@ import re
 import zipfile
 import requests
 from datetime import datetime, timedelta
+from types import SimpleNamespace
 import shutil
+
 
 logger = logging.getLogger()
 handler = logging.StreamHandler()
@@ -38,12 +40,30 @@ TMP_DATA_DIR = os.environ.get('TMP_DATA_DIR', '/data')
 APK_SIGN_KEY_STORE_PATH = os.environ['APK_SIGN_KEY_STORE_PATH']
 OTA_DIR = '/data/ota/'
 BUILD_DIR = '/data/release_download/'
-ARTIFACT_URL = ('https://gitlab.com/koreader/nightly-builds'
-                '/-/jobs/%s/artifacts/download')
+ARTIFACT_URL = os.environ.get('ARTIFACT_URL', 'https://gitlab.com/koreader/nightly-builds/-/jobs/%s/artifacts/download')
 NIGHTLY_BUILD_DIR = BUILD_DIR + 'nightly'
 STABLE_BUILD_DIR = BUILD_DIR + 'stable'
 
 PROCESSED_BUILDS_FILE = os.environ['PROCESSED_BUILDS_FILE']
+
+NIGHTWATCHER_TESTING = bool(os.environ.get('NIGHTWATCHER_TESTING'))
+
+
+koreader_version_re = re.compile(
+    r'''
+    # Release date.
+    (?P<base_version>
+        v[0-9]{4}\.[0-9]{2}
+        # Optional patch release number.
+        (?:\.[0-9]{1,2})?
+    )
+    # Optional commit count + commit hash + commit date for nightlies.
+    (?:
+        -(?P<commit_number>[0-9]+)
+        -g(?P<commit_hash>[0-9a-z]{7,12})
+        _(?P<commit_date>[0-9]{4}-[0-9]{2}-[0-9]{2})
+    )?
+    ''', re.VERBOSE)
 
 # Matching:
 # koreader-ubuntu-touch-arm-linux-gnueabihf-v2015.11-640-g17e9a8e_2018-03-09.targz
@@ -90,6 +110,8 @@ def run_cmd(cmd):
 
 def sign_apk(apk_path):
     logger.info('Signing %s...', apk_path)
+    if NIGHTWATCHER_TESTING:
+        return
     res = gevent.subprocess.check_output(
         ['uber-apk-signer',
          '--ks', APK_SIGN_KEY_STORE_PATH,
@@ -317,8 +339,7 @@ def fetch_build(build):
         logger.info('Build %s (%s) already processed, skipping.', build['name'], build['id'])
         return
 
-    logger.info('Fetching artifacts for build %s(%s): %s',
-                build['name'], build['id'], build['artifacts_file'])
+    logger.info('Fetching artifacts for build %s(%s)', build['name'], build['id'])
     artifact_zip = '%s/%s_artifacts.zip' % (TMP_DATA_DIR, build['id'])
 
     # `-C -` for continue download from dropped off
@@ -382,11 +403,40 @@ class PipeLine():
         resp.text = '["ok"]'
 
 
-def init():
+def testing():
+    pipeline = PipeLine()
     gevent.spawn(fetch_build_worker)
-    gevent.spawn(trigger_build)
+    testlist = []
+    for version in (
+        f[:-5]
+        for f in os.listdir('tests')
+        if f.endswith('.json')
+    ):
+        m = koreader_version_re.fullmatch(version)
+        if m is None:
+            raise ValueError(f'bad version string: {version}')
+        # Create a tuple of int for sorting:
+        # v2025.10                           → (2025, 10, 0,    0)
+        # v2025.10-156-g7fdba6a99_2026-03-01 → (2025, 10, 0,  156)
+        # v2026.03.1                         → (2026,  3, 1,    0)
+        key = tuple(map(int, m.group('base_version')[1:].split('.')))
+        if len(key) == 2:
+            key += (0,)
+        key += (int(m.group('commit_number') or 0),)
+        testlist.append((key, version))
+    for key, version in sorted(testlist):
+        with open('tests/%s.json' % version, encoding='utf-8') as fp:
+            req = SimpleNamespace()
+            req.headers = { 'X-GITLAB-TOKEN': GITLAB_TOKEN }
+            req.stream = fp
+            resp = SimpleNamespace()
+            pipeline.on_post(req, resp)
 
 
 api = falcon.App()
-api.add_route('/webhooks/gitlab-pipeline', PipeLine())
-init()
+if NIGHTWATCHER_TESTING:
+    testing()
+else:
+    api.add_route('/webhooks/gitlab-pipeline', PipeLine())
+    gevent.spawn(fetch_build_worker)
+    gevent.spawn(trigger_build)
