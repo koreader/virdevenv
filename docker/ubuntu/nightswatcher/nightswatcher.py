@@ -331,7 +331,7 @@ def mark_build_as_processed(build_id):
             f.write('\n'.join(processed_builds) + '\n')
     else:
         with open(PROCESSED_BUILDS_FILE, 'w', encoding='utf-8') as f:
-            f.write(build_id + '\n')
+            f.write(str(build_id) + '\n')
 
 
 def fetch_build(build):
