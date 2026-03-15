@@ -8,14 +8,10 @@ IMAGE_WORKDIR  = /
 define IMAGE_CMD
 [
 "gunicorn",
-"--access-logfile",
-"-",
-"-b",
-"0.0.0.0:9742",
-"-w",
-"1",
-"-k",
-"gevent",
+"--access-logfile", "-",
+"--bind", "0.0.0.0:9742",
+"--worker-class", "gevent",
+"--workers", "1",
 "nightswatcher:api"
 ]
 endef
