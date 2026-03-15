@@ -66,23 +66,38 @@ koreader_version_re = re.compile(
     )?
     ''', re.VERBOSE)
 
-# Matching:
-# koreader-ubuntu-touch-arm-linux-gnueabihf-v2015.11-640-g17e9a8e_2018-03-09.targz
-# koreader-android-arm-linux-androideabi-v2015.11-654-gb7392f7_2018-03-09.apk
+# koreader-linux-x86_64-v2023.06.1.tar.xz
+# koreader-ubuntu-touch-arm-v2015.11-640-g17e9a8e_2018-03-09.targz
+# koreader-android-arm-v2015.11-654-gb7392f7_2018-03-09.apk
 artifact_re = re.compile(
-    (r'.*/koreader-'
-     r'(?P<platform>[a-z0-9\-]+)-'
-     r'(?:(?P<arch>arm|aarch64|x86|i686|x86_64)-?.*-)?'
-     r'(?P<version>v[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-(?P<commit_number>[0-9]+))?(?:-g(?P<commit_hash>[0-9a-z]{7,12})_(?P<commit_date>[0-9]{4}-[0-9]{2}-[0-9]{2})?)?)'
-     r'\.(?P<ftype>[A-Za-z]+(?:\.[a-z]+)?)$'))
+    r'''
+    koreader-
+    (?P<platform>[a-z0-9\-]+?)-
+    (?:(?P<arch>arm64|arm|aarch64|i686|x86_64|x86)-?.*-)?
+    (?P<version>v[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-(?P<commit_number>[0-9]+)-g(?P<commit_hash>[0-9a-z]{7,12})_(?P<commit_date>[0-9]{4}-[0-9]{2}-[0-9]{2}))?)
+    \.(?P<ftype>[A-Za-z]+(?:\.[a-z]+)?)
+    ''', re.VERBOSE)
 
-# koreader/koreader-2024.11-70-amd64.deb
-artifact_re_deb = re.compile((
-    r'.*/koreader-'
-    r'(?P<version>[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-(?P<commit_number>[0-9]+))?)-'
-    r'(?:(?P<arch>armhf|arm64|amd64))'
-    r'\.(?P<ftype>deb)$'
-))
+# koreader-v2023.06.1-x86_64.AppImage
+# koreader-v2025.10-197-g7c5ee9c1a2_2026-03-13-x86_64.AppImage
+artifact_re_appimage = re.compile(
+    r'''
+    koreader-
+    (?P<version>v[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-(?P<commit_number>[0-9]+)-g(?P<commit_hash>[0-9a-z]{7,12})_(?P<commit_date>[0-9]{4}-[0-9]{2}-[0-9]{2}))?)-
+    (?:(?P<arch>aarch64|armhf|x86_64))
+    \.(?P<ftype>AppImage)
+    ''', re.VERBOSE)
+
+# koreader_2023.06.1-1_amd64.deb
+# koreader_2025.10-197-g7c5ee9c1a2-1_amd64.deb
+artifact_re_deb = re.compile(
+    r'''
+    koreader_
+    (?P<version>[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-(?P<commit_number>[0-9]+)-g(?P<commit_hash>[0-9a-z]{7,12}))?)
+    -(?P<pkg_rev>[0-9]+)
+    _(?:(?P<arch>armhf|arm64|amd64))
+    \.(?P<ftype>deb)
+    ''', re.VERBOSE)
 
 def trigger_build():
     repo = 'koreader%2Fnightly-builds'
@@ -147,29 +162,35 @@ def get_artifact_metadata(artifact_zip):
         logger.exception('Got invalid zip file: %s', artifact_zip)
         return None, None, None, {}
 
-    platform = None
-    version = None
-    commit_number = None
+    version_set = set()
+    commit_number_set = set()
     artifact = {}
     for f in namelist:
         logger.info('Checking file in zip %s', f)
-        m = artifact_re.match(f)
-        if not m:
-            m = artifact_re_deb.match(f)
-            if m:
-                platform = 'debian'
+        for rx, rx_platform in (
+            (artifact_re           , None      ),
+            (artifact_re_appimage  , 'appimage'),
+            (artifact_re_deb       , 'debian'  ),
+        ):
+            basename = os.path.basename(f.strip())
+            m = rx.fullmatch(basename)
+            if m is None:
+                continue
+            gd = m.groupdict()
+            # NOTE: remove 'v' prefix and strip build date from version.
+            version_set.add(gd['version'].removeprefix('v').split('_', 1)[0])
+            commit_number_set.add(gd['commit_number'])
+            platform = gd.pop('platform', rx_platform)
+            arch = gd.get('arch')
+            if arch is not None:
+                platform += '-' + arch
+            artifact[gd['ftype']] = (platform, basename)
 
-        if not m:
-            continue
+    logger.debug('get_artifact_metadata(%s): %r, %r, %r', artifact_zip, version_set, commit_number_set, artifact)
+    assert len(version_set) == 1, version_set
+    assert len(commit_number_set) == 1, commit_number_set
 
-        if not platform:
-            platform = m.group("platform")
-        version = m.group("version")
-        commit_number = m.group("commit_number")
-        ftype = m.group("ftype")
-        artifact[ftype] = os.path.basename(f.strip())
-
-    return platform, version, commit_number, artifact
+    return version_set.pop(), commit_number_set.pop(), artifact
 
 
 # git-describe adds a commit number and commit hash prefixed by -g if it's not the tag itself
@@ -181,20 +202,16 @@ download_artifact_ext_map = collections.defaultdict(lambda: ('zip',), {
     'build_android': ('apk',),
     'build_android_aarch64': ('apk',),
     'build_android_x86': ('apk',),
-    'build_appimage': ('AppImage',),
-    'build_appimage_aarch64': ('AppImage',),
-    'build_appimage_armhf': ('AppImage',),
-    'build_debian': ('deb', 'tar.xz'),
-    'build_debian_armhf': ('deb', 'tar.xz'),
-    'build_debian_arm64': ('deb', 'tar.xz'),
+    'build_linux_aarch64': ('AppImage', 'deb', 'tar.xz'),
+    'build_linux_armhf': ('AppImage', 'deb', 'tar.xz'),
+    'build_linux_x86_64': ('AppImage', 'deb', 'tar.xz'),
     'build_ubuntutouch': ('click',),
 })
 
 # names come from GitLab, see https://gitlab.com/koreader/nightly-builds/blob/master/.gitlab-ci.yml
 ota_link_models = frozenset([
     'build_android', 'build_android_aarch64', 'build_android_x86',
-    'build_appimage', 'build_appimage_aarch64', 'build_appimage_armhf',
-    'build_debian', 'build_debian_armhf', 'build_debian_arm64',])
+    'build_linux_aarch64', 'build_linux_armhf', 'build_linux_x86_64'])
 ota_sync_models = frozenset([
     'build_cervantes',
     'build_kindle', 'build_legacy_kindle',
@@ -216,9 +233,9 @@ def extract_zsync_target(zsync_file):
 
 def extract_build(artifact_zip, build):
     # caller is responsible for removing artifact_zip
-    platform, version, commit_number, artifact = get_artifact_metadata(artifact_zip)
+    version, commit_number, artifact = get_artifact_metadata(artifact_zip)
     stable = is_stable(commit_number)
-    if not platform or not artifact_zip:
+    if not artifact or not artifact_zip:
         logger.error(
             'Invalid build artifact, failed to extract metadata from zipfile.')
         return False
@@ -248,7 +265,7 @@ def extract_build(artifact_zip, build):
     if not os.path.exists(version_dir):
         os.mkdir(version_dir)
 
-    for filename in artifact.values():
+    for platform, filename in artifact.values():
         tmp_file_path = tmp_version_dir + filename
         download_file_path = version_dir + filename
 
@@ -280,7 +297,7 @@ def extract_build(artifact_zip, build):
 
     # build zsync metadata
     if build['name'] in ota_sync_models:
-        filename = artifact['targz']
+        platform, filename = artifact['targz']
         logger.info('Building zsync metadata for %s...', platform)
         download_file_path = version_dir + filename
         # FIXME: check version in latest-nightly and skip old versions
