@@ -27,7 +27,6 @@ formatter = logging.Formatter(
     '%(asctime)s %(name)s %(levelname)-8s %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
-logger.setLevel(logging.DEBUG)
 build_fetch_queue = queue.Queue()
 
 
@@ -47,6 +46,8 @@ STABLE_BUILD_DIR = BUILD_DIR + 'stable'
 PROCESSED_BUILDS_FILE = os.environ['PROCESSED_BUILDS_FILE']
 
 NIGHTWATCHER_TESTING = bool(os.environ.get('NIGHTWATCHER_TESTING'))
+
+logger.setLevel(logging.DEBUG if NIGHTWATCHER_TESTING else logging.INFO)
 
 
 koreader_version_re = re.compile(
@@ -106,6 +107,20 @@ def trigger_build():
 def run_cmd(cmd):
     logger.info('Running command: %s', ' '.join(cmd))
     return gevent.subprocess.check_call(cmd)
+
+
+def symlink(target, link_name):
+    logger.debug('ln -sf \'%s\' \'%s\'', target, link_name)
+    if os.path.exists(link_name):
+        os.remove(link_name)
+    os.symlink(target, link_name)
+
+
+def copyfile(source, target):
+    logger.debug('cp --remove-destination \'%s\' \'%s\'', source, target)
+    if os.path.exists(target):
+        os.remove(target)
+    shutil.copy2(source, target)
 
 
 def sign_apk(apk_path):
@@ -214,38 +229,36 @@ def extract_build(artifact_zip, build):
         download_artifact_ext.add('targz')
     missing = download_artifact_ext - set(artifact.keys())
     if missing:
-        logger.error('Invalid build artifact, missing one of %s files. Artifact: %s, missing: %s', platform, artifact, sorted(missing))
+        logger.error('Invalid build artifact, missing one of %s files. Artifact: %s, missing: %s', build['name'], artifact, sorted(missing))
         return False
 
-    # check to see if we already have the build
-    version_dir = '%s/%s/' % (stable is True and STABLE_BUILD_DIR or NIGHTLY_BUILD_DIR, version)
-
-    download_artifacts = [artifact[ext] for ext in download_artifact_ext]
-    logger.info('Found artifacts for build %s: %s', build['name'], download_artifacts)
-    if not download_artifacts:
+    artifact = {ext: artifact[ext] for ext in download_artifact_ext}
+    logger.info('Found artifacts for %s: %s', build['name'], artifact)
+    if not artifact:
         logger.error('No valid artifacts found for build %s', build['name'])
         return False
 
-    if not os.path.exists(version_dir):
-        os.mkdir(version_dir)
-
     # unzip to tmp directory
-    tmp_version_dir = '%s/tmp-%s-%s/' % (TMP_DATA_DIR, platform, version)
+    tmp_version_dir = '%s/tmp-%s-%s/' % (TMP_DATA_DIR, build['name'], version)
     # -n for no overwrite, -j for junk path
     unzip_cmd = ['unzip', '-n', '-j', '-d', tmp_version_dir, artifact_zip]
     run_cmd(unzip_cmd)
 
-    for download_artifact in download_artifacts:
-        tmp_artifact_path = tmp_version_dir + download_artifact
-        download_artifact_path = version_dir + download_artifact
+    version_dir = '%s/%s/' % (stable is True and STABLE_BUILD_DIR or NIGHTLY_BUILD_DIR, version)
+    if not os.path.exists(version_dir):
+        os.mkdir(version_dir)
 
-        if build['name'].startswith('build_android'):
-            sign_apk(tmp_artifact_path)
-        shutil.copy2(tmp_artifact_path, download_artifact_path)
+    for filename in artifact.values():
+        tmp_file_path = tmp_version_dir + filename
+        download_file_path = version_dir + filename
+
+        if platform.startswith('android'):
+            sign_apk(tmp_file_path)
+        copyfile(tmp_file_path, download_file_path)
 
         # point update pointer to the right location
         if build['name'] in ota_link_models:
-            if build['name'] == 'build_android':
+            if platform == 'android-arm':
                 # For historical reasons koreader-android-arm OTA uses koreader-android.
                 platform = 'android'
 
@@ -253,28 +266,23 @@ def extract_build(artifact_zip, build):
             link_file_nightly = OTA_DIR + ('koreader-%s-latest-nightly' % platform)
             link_file = stable is True and link_file_stable or link_file_nightly
 
-            if os.path.exists(OTA_DIR + download_artifact):
-                os.remove(OTA_DIR + download_artifact)
-            os.symlink(download_artifact_path, OTA_DIR + download_artifact)
+            symlink(download_file_path, OTA_DIR + filename)
 
             with open(link_file, "w", encoding="utf-8") as f:
-                f.write(download_artifact)
+                f.write(filename)
 
             if stable is True:
-                if os.path.exists(link_file_nightly):
-                    os.remove(link_file_nightly)
-                shutil.copy2(link_file, link_file_nightly)
+                copyfile(link_file, link_file_nightly)
                 if 'android' in build['name']:
                     tmp_android_fdroid_latest_path = tmp_version_dir + 'koreader-android-fdroid-latest'
                     android_fdroid_latest = OTA_DIR + 'koreader-android-fdroid-latest'
-                    if os.path.exists(android_fdroid_latest):
-                        os.remove(android_fdroid_latest)
-                    shutil.copy2(tmp_android_fdroid_latest_path, android_fdroid_latest)
+                    copyfile(tmp_android_fdroid_latest_path, android_fdroid_latest)
 
     # build zsync metadata
     if build['name'] in ota_sync_models:
+        filename = artifact['targz']
         logger.info('Building zsync metadata for %s...', platform)
-        tmp_targz_path = tmp_version_dir + artifact['targz']
+        download_file_path = version_dir + filename
         # FIXME: check version in latest-nightly and skip old versions
         zsync_file_stable = f"{OTA_DIR}koreader-{platform}-latest-stable.zsync"
         zsync_file_nightly = f"{OTA_DIR}koreader-{platform}-latest-nightly.zsync"
@@ -286,9 +294,8 @@ def extract_build(artifact_zip, build):
         if os.path.exists(zsync_file_nightly):
             nightly_targz_prev = extract_zsync_target(zsync_file_nightly)
 
-        shutil.move(tmp_targz_path, OTA_DIR)
-        run_cmd(['zsyncmake', OTA_DIR + artifact['targz'],
-                 '-C', '-u', artifact['targz'], '-o', zsync_file])
+        symlink(download_file_path, OTA_DIR + filename)
+        run_cmd(['zsyncmake', OTA_DIR + filename, '-C', '-u', filename, '-o', zsync_file])
 
         if stable is True:
             shutil.copy2(zsync_file, zsync_file_nightly)
