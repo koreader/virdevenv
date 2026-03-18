@@ -24,6 +24,6 @@ rm "${target}.tar.gz"
 cd /usr/local || exit
 chmod +w,og=rX -R x-tools/*/
 rm -vf x-tools/*/build.log.bz2
-hardlink x-tools/
+hardlink --ignore-time x-tools/
 
 # vim: sw=4
