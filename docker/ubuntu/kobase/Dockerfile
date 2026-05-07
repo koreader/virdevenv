@@ -216,7 +216,7 @@ fi
 EOF
 
 # ccache
-ARG CCACHE_VER="4.12.3"
+ARG CCACHE_VER="4.13.6"
 RUN <<'EOF'
 set -x
 case "${TARGETPLATFORM}" in
@@ -228,7 +228,7 @@ esac
 if [[ -z "${platform}" ]]; then
     apt-get install --no-install-recommends -y ccache
 else
-    wget -nv -O - "https://github.com/ccache/ccache/releases/download/v${CCACHE_VER}/ccache-${CCACHE_VER}-${platform}.tar.xz" | tar -C /usr/local/bin --strip-components=1 -xJ "ccache-${CCACHE_VER}-${platform}/ccache"
+    wget -nv -O - "https://github.com/ccache/ccache/releases/download/v${CCACHE_VER}/ccache-${CCACHE_VER}-${platform}-glibc.tar.xz" | tar -C /usr/local/bin --strip-components=1 -xJ "ccache-${CCACHE_VER}-${platform}-glibc/ccache"
     chmod 755 /usr/local/bin/ccache
 fi
 ccache --version
