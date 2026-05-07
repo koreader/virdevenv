@@ -4,7 +4,7 @@
 . "${0%/*}/common.sh"
 
 [ $# -le 1 ]
-version="${1:-0.9.2}"
+version="${1:-0.11.3}"
 
 case "${TARGETPLATFORM}" in
     linux/amd64) platform='linux-amd64' ;;
