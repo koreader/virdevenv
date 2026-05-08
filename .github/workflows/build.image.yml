@@ -65,9 +65,10 @@ jobs:
 
       - name: Download base image from artifacts
         if: inputs.base && !inputs.publish
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
-          name: ${{ inputs.base }} ${{ matrix.platform }}
+          name: ${{ inputs.base }} ${{ matrix.platform }}.tar
+          skip-decompress: true
 
       - name: Load base image
         if: inputs.base && !inputs.publish
