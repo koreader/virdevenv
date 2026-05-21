@@ -170,7 +170,6 @@ RUN luarocks install luacov-coveralls ${LUACOV_COVERALLS_VER}
 
 # OTHER. {{{
 
-ARG FFI_CDECL_DEPS="gcc-11-plugin-dev"
 # GLib meson build needs distutils.
 ARG GLIB_DEPS="python3-distutils"
 ARG MISC_TOOLS="\
@@ -196,7 +195,6 @@ ARG MISC_TOOLS="\
     zip \
     "
 RUN apt-get install --no-install-recommends -y \
-    $FFI_CDECL_DEPS \
     $GLIB_DEPS \
     $MISC_TOOLS \
     ;
@@ -373,6 +371,19 @@ shfmt --version
 EOF
 
 # }}}
+
+# ffi-cdecl
+ARG FFI_CDECL_REV="da9842fc7823938d649e04be285e178039ea7c6f"
+RUN wget -nv -O - https://github.com/koreader/koreader-base/archive/${FFI_CDECL_REV}.tar.gz | tar xz
+WORKDIR koreader-base-${FFI_CDECL_REV}
+RUN mkdir -p thirdparty/kpvcrlib/crengine/cr3gui/data/dict
+RUN make -j"$(nproc)" OUTPUT_DIR=../../build -C ffi-cdecl/appimage appdir
+RUN mv build/AppDir /opt/ffi-cdecl
+RUN chmod og=rX -R /opt/ffi-cdecl
+RUN ln -s /opt/ffi-cdecl/AppRun /usr/local/bin/ffi-cdecl
+WORKDIR ..
+RUN rm -rf koreader-base-*
+RUN ffi-cdecl -v
 
 # }}}
 
