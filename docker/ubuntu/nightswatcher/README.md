@@ -21,7 +21,6 @@ docker run \
         -v `pwd`/ota:/data/ota \
         -v `pwd`/metadata:/metadata \
         -p 9742:9742 \
-        -e GITLAB_TRIGGER_TOKEN='foo' \
         -e GITLAB_WEBHOOK_TOKEN='bar' \
         -e APK_SIGN_KEY_PASS='foo' \
         -e APK_SIGN_STORE_PASS='foo' \
