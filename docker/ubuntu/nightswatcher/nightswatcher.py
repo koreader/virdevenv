@@ -15,8 +15,6 @@ import os
 import logging
 import re
 import zipfile
-import requests
-from datetime import datetime, timedelta
 from types import SimpleNamespace
 import shutil
 
@@ -34,7 +32,6 @@ APK_SIGN_KEY_PASS = os.environ['APK_SIGN_KEY_PASS']
 APK_SIGN_KEY_ALIAS = os.environ['APK_SIGN_KEY_ALIAS']
 APK_SIGN_STORE_PASS = os.environ['APK_SIGN_STORE_PASS']
 GITLAB_TOKEN = os.environ['GITLAB_WEBHOOK_TOKEN']
-GITLAB_TRIGGER_TOKEN = os.environ['GITLAB_TRIGGER_TOKEN']
 TMP_DATA_DIR = os.environ.get('TMP_DATA_DIR', '/data')
 APK_SIGN_KEY_STORE_PATH = os.environ['APK_SIGN_KEY_STORE_PATH']
 OTA_DIR = '/data/ota/'
@@ -98,25 +95,6 @@ artifact_re_deb = re.compile(
     _(?:(?P<arch>armhf|arm64|amd64))
     \.(?P<ftype>deb)
     ''', re.VERBOSE)
-
-def trigger_build():
-    repo = 'koreader%2Fnightly-builds'
-    trigger_url = 'https://gitlab.com/api/v4/projects/%s/trigger/pipeline' % repo
-    while True:
-        now = datetime.now()
-        next_build_time = now.replace(hour=6, minute=0, second=0)
-        if now > next_build_time:
-            next_build_time = next_build_time + timedelta(days=1)
-        wait_time = (next_build_time - now).seconds
-        logger.info('Will trigger next nightly build in %s minutes.',
-                    wait_time/60)
-        gevent.sleep(wait_time)
-        req = requests.post(trigger_url,
-                           data={'token': GITLAB_TRIGGER_TOKEN,
-                                 'ref': 'master'},
-                           timeout=10)
-        logger.info('New nightly build triggered: %s', req.status_code)
-        gevent.sleep(1)
 
 
 def run_cmd(cmd):
@@ -464,4 +442,3 @@ if NIGHTWATCHER_TESTING:
 else:
     api.add_route('/webhooks/gitlab-pipeline', PipeLine())
     gevent.spawn(fetch_build_worker)
-    gevent.spawn(trigger_build)

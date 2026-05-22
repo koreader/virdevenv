@@ -1,5 +1,4 @@
 falcon==4.2.0
 gevent==25.9.1
 gunicorn==26.0.0
-requests==2.34.2
 ujson==5.12.1
