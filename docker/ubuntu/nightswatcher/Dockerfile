@@ -30,7 +30,6 @@ exec java -jar /opt/uber-apk-signer/uber-apk-signer.jar "$@"
 EOF
 
 # Install nightswatcher's other python dependencies.
-# FIXME: replace single `requests` use in nightswatcher by a call to curl.
 COPY --chmod=644 nightswatcher/requirements.txt /nightswatcher/
 RUN uv pip install --no-cache --system -r /nightswatcher/requirements.txt
 
