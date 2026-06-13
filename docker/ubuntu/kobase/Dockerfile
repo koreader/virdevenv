@@ -373,7 +373,7 @@ EOF
 # }}}
 
 # ffi-cdecl
-ARG FFI_CDECL_REV="829ab86ae6c9c2eb6001ac16492cde855238ca59"
+ARG FFI_CDECL_REV="9c4d598a80fb763a6fdad4e446c3202e99636544"
 RUN wget -nv -O - https://github.com/koreader/koreader-base/archive/${FFI_CDECL_REV}.tar.gz | tar xz
 WORKDIR koreader-base-${FFI_CDECL_REV}
 RUN mkdir -p thirdparty/kpvcrlib/crengine/cr3gui/data/dict
