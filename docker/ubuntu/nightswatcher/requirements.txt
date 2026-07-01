@@ -1,4 +1,4 @@
-falcon==4.2.0
+falcon==4.3.1
 gevent==25.9.1
 gunicorn==26.0.0
-ujson==5.12.1
+ujson==5.13.0
