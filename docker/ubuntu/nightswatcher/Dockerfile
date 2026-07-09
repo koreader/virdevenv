@@ -1,12 +1,24 @@
 RUN apt-get update
 RUN apt-get upgrade -y
+ARG BUILD_DEPS="\
+    chrpath \
+    cmake \
+    file \
+    g++ \
+    git \
+    make \
+    meson \
+    ninja-build \
+    patch \
+    pkg-config \
+    wget \
+"
 RUN apt-get install --no-install-recommends -y \
     ca-certificates \
     curl \
     python3 \
     unzip \
-    wget \
-    ;
+    $BUILD_DEPS
 RUN --mount=src=scripts,dst=/scripts /scripts/install_uv.sh
 
 # Install zipalign.
@@ -15,6 +27,9 @@ RUN apt-get install --no-install-recommends -y zipalign
 
 # Install zsync.
 RUN apt-get install --no-install-recommends -y zsync
+
+# Install zstd (for extracting kotasync manifests).
+RUN apt-get install --no-install-recommends -y zstd
 
 # Install uber-apk-signer.
 ARG JDK_VER="17"
@@ -29,6 +44,18 @@ COPY --chmod=755 <<'EOF' /opt/uber-apk-signer/uber-apk-signer
 exec java -jar /opt/uber-apk-signer/uber-apk-signer.jar "$@"
 EOF
 
+# Install kotasync.
+ARG KOTASYNC_REV="d2e6598f49f679a896ef0240275d1ad7c7a8306f"
+RUN wget -nv -O - https://github.com/koreader/koreader-base/archive/${KOTASYNC_REV}.tar.gz | tar xz
+WORKDIR koreader-base-${KOTASYNC_REV}/kotasync
+RUN mkdir -p ../thirdparty/kpvcrlib/crengine/cr3gui/data/dict
+RUN make -j"$(nproc)" OUTPUT_DIR=build
+RUN mv build/AppDir /opt/kotasync
+RUN chmod og=rX -R /opt/kotasync
+RUN ln -s /opt/kotasync/AppRun /usr/local/bin/kotasync
+WORKDIR ../..
+RUN rm -rf koreader-base-*
+
 # Install nightswatcher's other python dependencies.
 COPY --chmod=644 nightswatcher/requirements.txt /nightswatcher/
 RUN uv pip install --no-cache --system -r /nightswatcher/requirements.txt
@@ -38,9 +65,7 @@ COPY --chmod=755 nightswatcher/nightswatcher.py /nightswatcher/
 RUN mkdir -p /data/ota /data/release_download /metadata
 
 # Cleanup.
-RUN apt-get purge -y --auto-remove \
-    wget \
-    ;
+RUN apt-get purge -y --auto-remove $BUILD_DEPS
 RUN rm /usr/local/bin/{uv,uvx}
 
 # vim: sw=4
