@@ -25,4 +25,4 @@ def build(built):
 # Generate build matrices.
 build({})
 
-# vim sw: 2
+# vim: sw=2
