@@ -199,7 +199,14 @@ ota_sync_models = frozenset([
     'build_remarkable',
     'build_remarkable_aarch64',
     'build_sony_prstux'])
+ota_sync_manifest = collections.defaultdict(lambda: 'koreader/ota/package.index', {
+    'pocketbook': 'applications/koreader/ota/package.index',
+})
 
+
+def extract_kotasync_target(kotasync_file):
+    """ Extract target filename from kotasync manifest. """
+    return ujson.loads(gevent.subprocess.check_output(('zstd', '-dcf', kotasync_file)))['filename']
 
 def extract_zsync_target(zsync_file):
     """ Extract target filename from zsync file header. """
@@ -221,6 +228,7 @@ def extract_build(artifact_zip, build):
     # validate artifact_zip
     download_artifact_ext = set(download_artifact_ext_map[build['name']])
     if build['name'] in ota_sync_models:
+        download_artifact_ext.add('tar.xz')
         download_artifact_ext.add('targz')
     missing = download_artifact_ext - set(artifact.keys())
     if missing:
@@ -272,6 +280,50 @@ def extract_build(artifact_zip, build):
                     tmp_android_fdroid_latest_path = tmp_version_dir + 'koreader-android-fdroid-latest'
                     android_fdroid_latest = OTA_DIR + 'koreader-android-fdroid-latest'
                     copyfile(tmp_android_fdroid_latest_path, android_fdroid_latest)
+
+    # Build kotasync metadata.
+    if build['name'] in ota_sync_models:
+        platform, filename = artifact['tar.xz']
+        logger.info('Building kotasync metadata for %s...', platform)
+        download_file_path = version_dir + filename
+        # FIXME: check version in latest-nightly and skip old versions
+        kotasync_file_stable = f"{OTA_DIR}koreader-{platform}-latest-stable.kotasync"
+        kotasync_file_nightly = f"{OTA_DIR}koreader-{platform}-latest-nightly.kotasync"
+        kotasync_file = stable is True and kotasync_file_stable or kotasync_file_nightly
+
+        # Keep the previous targz file in case someone downloaded the kotasync
+        # file at an inopportune time.  That should normally only be seconds,
+        # but better safe than sorry.
+        nightly_txz_prev = None
+        if os.path.exists(kotasync_file_nightly):
+            nightly_txz_prev = extract_kotasync_target(kotasync_file_nightly)
+
+        symlink(download_file_path, OTA_DIR + filename)
+        cmd = [
+            'kotasync', 'make',
+            '--manifest', ota_sync_manifest[platform],
+        ]
+        if os.path.exists(kotasync_file_nightly):
+            cmd.extend(('--reorder', kotasync_file_nightly))
+        cmd.extend((OTA_DIR + filename, kotasync_file))
+        run_cmd(cmd)
+
+        if stable is True:
+            shutil.copy2(kotasync_file, kotasync_file_nightly)
+
+        # Find the new tar.xz file by reading the kotasync file, and then
+        # purge older files.
+        stable_txz = None
+        nightly_txz = None
+        if os.path.exists(kotasync_file_stable):
+            stable_txz = extract_kotasync_target(kotasync_file_stable)
+        if os.path.exists(kotasync_file_nightly):
+            nightly_txz = extract_kotasync_target(kotasync_file_nightly)
+
+        for f in os.listdir(OTA_DIR):
+            if f.startswith(f'koreader-{platform}-v') and f.endswith('.tar.xz') and f != stable_txz and f != nightly_txz and f != nightly_txz_prev:
+                logger.info(f'Purging old tar.xz: {f}')
+                os.remove(OTA_DIR + f)
 
     # build zsync metadata
     if build['name'] in ota_sync_models:
