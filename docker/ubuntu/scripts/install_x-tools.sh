@@ -14,13 +14,18 @@ case "${TARGETPLATFORM}" in
 esac
 
 target="$1"
-version="${2:-2025.05}"
+version="${2:-2026.08}"
+format='tar.gz'
 
-echo "installing x-tools: ${target} ${version}"
+if dpkg --compare-versions "${version}" ge '2026.08'; then
+    format='tar.zst'
+fi
 
-wget -nv "https://github.com/koreader/koxtoolchain/releases/download/${version}/${target}.tar.gz"
-tar xzv --no-same-owner -C /usr/local -f "${target}.tar.gz"
-rm "${target}.tar.gz"
+echo "installing x-tools: ${target} ${version} [${format}]"
+
+wget -nv "https://github.com/koreader/koxtoolchain/releases/download/${version}/${target}.${format}"
+tar xav --no-same-owner -C /usr/local -f "${target}.${format}"
+rm "${target}.${format}"
 cd /usr/local || exit
 chmod +w,og=rX -R x-tools/*/
 rm -vf x-tools/*/build.log.bz2
