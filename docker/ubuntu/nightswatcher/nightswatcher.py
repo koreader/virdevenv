@@ -298,15 +298,16 @@ def extract_build(artifact_zip, build):
         if os.path.exists(kotasync_file_nightly):
             nightly_txz_prev = extract_kotasync_target(kotasync_file_nightly)
 
-        symlink(download_file_path, OTA_DIR + filename)
         cmd = [
             'kotasync', 'make',
             '--manifest', ota_sync_manifest[platform],
         ]
         if os.path.exists(kotasync_file_nightly):
             cmd.extend(('--reorder', kotasync_file_nightly))
-        cmd.extend((OTA_DIR + filename, kotasync_file))
+        cmd.extend((download_file_path, kotasync_file))
         run_cmd(cmd)
+
+        symlink(download_file_path, OTA_DIR + filename)
 
         if stable is True:
             shutil.copy2(kotasync_file, kotasync_file_nightly)
