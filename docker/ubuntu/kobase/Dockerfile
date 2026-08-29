@@ -37,8 +37,36 @@ COPY --chown=${USER} kobase/bashrc .bashrc
 # MAKE. {{{
 
 ARG MAKE_VER="4.4.1"
-RUN wget -nv -O - https://ftpmirror.gnu.org/make/make-${MAKE_VER}.tar.gz | tar xz
+RUN wget -nv -O - http://archive.ubuntu.com/ubuntu/pool/main/m/make-dfsg/make-dfsg_${MAKE_VER}.orig.tar.xz | tar xJ
 WORKDIR make-${MAKE_VER}
+RUN patch -p1 <<'EOF'
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -530,9 +530,9 @@ top_builddir = @top_builddir@
+ top_srcdir = @top_srcdir@
+ AUTOMAKE_OPTIONS = dist-lzip silent-rules std-options subdir-objects nostdinc
+ ACLOCAL_AMFLAGS = -I m4
+-SUBDIRS = lib po doc
++SUBDIRS = lib po
+ include_HEADERS = src/gnumake.h
+-man_MANS = doc/make.1
++man_MANS =
+ make_SRCS = src/ar.c src/arscan.c src/commands.c src/commands.h \
+ 		src/debug.h src/default.c src/dep.h src/dir.c src/expand.c \
+ 		src/file.c src/filedef.h src/function.c src/getopt.c \
+--- a/configure
++++ b/configure
+@@ -15212,7 +15212,7 @@ fi
+ 
+ 
+ # Specify what files are to be created.
+-ac_config_files="$ac_config_files build.cfg tests/config-flags.pm Makefile lib/Makefile doc/Makefile po/Makefile.in"
++ac_config_files="$ac_config_files build.cfg tests/config-flags.pm Makefile lib/Makefile po/Makefile.in"
+ 
+ # We don't need this: the standard automake output suffices for POSIX systems.
+ #mk/Posix.mk
+EOF
+
 RUN ./configure --disable-nls --without-guile
 RUN make -j"$(nproc)"
 RUN install -m755 --strip make /usr/local/bin/
