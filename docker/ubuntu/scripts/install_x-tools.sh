@@ -24,11 +24,15 @@ fi
 echo "installing x-tools: ${target} ${version} [${format}]"
 
 wget -nv "https://github.com/koreader/koxtoolchain/releases/download/${version}/${target}.${format}"
-tar xav --no-same-owner -C /usr/local -f "${target}.${format}"
+tar xav --no-same-owner -C /opt -f "${target}.${format}"
 rm "${target}.${format}"
-cd /usr/local || exit
+cd /opt || exit
 chmod +w,og=rX -R x-tools/*/
 rm -vf x-tools/*/build.log.bz2
 hardlink --ignore-time x-tools/
+mkdir -p x-tools/bin
+for exe in x-tools/*/bin/*; do
+    ln --force --symbolic --relative "${exe}" x-tools/bin
+done
 
 # vim: sw=4
