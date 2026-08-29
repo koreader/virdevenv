@@ -17,8 +17,10 @@ ARG BUILD_DEPS="\
 RUN apt-get install --no-install-recommends -y \
     ca-certificates \
     curl \
+    pigz \
     python3 \
     unzip \
+    xz-utils \
     $BUILD_DEPS
 RUN --mount=src=scripts,dst=/scripts /scripts/install_uv.sh
 
