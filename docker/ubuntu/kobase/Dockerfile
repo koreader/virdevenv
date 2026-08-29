@@ -356,7 +356,7 @@ shellcheck --version
 EOF
 
 # shfmt
-ARG SHFMT_VER="3.13.1"
+ARG SHFMT_VER="3.14.0"
 RUN <<'EOF'
 set -x
 case "${TARGETPLATFORM}" in
