@@ -214,7 +214,7 @@ fi
 EOF
 
 # ccache
-ARG CCACHE_VER="4.13.6"
+ARG CCACHE_VER="4.14"
 RUN <<'EOF'
 set -x
 case "${TARGETPLATFORM}" in
