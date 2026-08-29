@@ -27,4 +27,8 @@ RUN rm -rf \
 RUN dpkg-query -W -f='$${Installed-Size;8}  $${Package}\n' | sort -n
 endef
 
+define DEFAULT_IMAGE_ENV
+PATH=/opt/x-tools/bin:$${PATH}
+endef
+
 include ../rules.mk

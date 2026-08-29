@@ -39,6 +39,7 @@ COPY --from=build / /
 ARG USER WORKDIR
 USER $${USER}
 WORKDIR $${WORKDIR}
+$(and $(IMAGE_ENV),ENV $(IMAGE_ENV))
 
 # }}}
 
@@ -76,7 +77,7 @@ target_escape = $(subst :,\:,$1)
 
 define image_rules
 $(eval VERSION := )
-$(foreach v,BUILD_ARGS IMAGE_BASE IMAGE_CMD IMAGE_PLATFORM IMAGE_POST IMAGE_PRE IMAGE_SHELL IMAGE_USER IMAGE_WORKDIR,
+$(foreach v,BUILD_ARGS IMAGE_BASE IMAGE_CMD IMAGE_ENV IMAGE_PLATFORM IMAGE_POST IMAGE_PRE IMAGE_SHELL IMAGE_USER IMAGE_WORKDIR,
 $(eval $v := $$(DEFAULT_$v))
 )
 $(eval include $1/settings.mk)
