@@ -1,0 +1,61 @@
+name: Latest
+
+on:
+  workflow_dispatch:
+    inputs:
+      registry:
+        description: 'Docker registry'
+        default: &DOCKER_REGISTRY docker.io
+        type: string
+      namespace:
+        description: 'Docker namespace'
+        default: &DOCKER_NAMESPACE koreader
+        type: string
+      images:
+        description: 'Tag the specified images (empty: tag all)'
+        required: false
+        type: string
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+
+  latest:
+
+    name: Latest
+    environment: docker
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          clean: false
+          fetch-depth: 1
+          show-progress: false
+
+      - name: Install regctl
+        run: ./docker/ubuntu/scripts/install_regctl.sh
+
+      - name: Log in to the registry
+        env:
+          PASSWORD: ${{ secrets.DOCKER_TOKEN }}
+        run: regctl registry login '${{ inputs.registry }}' --user '${{ vars.DOCKER_USER }}' --pass-stdin <<<"${PASSWORD}"
+
+      - name: Tag latest images
+        env:
+          DOCKER_REGISTRY: *DOCKER_REGISTRY
+          DOCKER_NAMESPACE: *DOCKER_NAMESPACE
+        run: |
+          exec 2>&1 # avoid jumbled output…
+          set -x
+          images=(${{ inputs.images }})
+          registry='${{ inputs.registry || env.DOCKER_REGISTRY }}'
+          namespace='${{ inputs.namespace || env.DOCKER_NAMESPACE }}'
+          make -s -C docker/ubuntu \
+            REGISTRY="${registry}" NAMESPACE="${namespace}" \
+            ${images:+"IMAGES=${images[*]}"} latest
+          set +x
