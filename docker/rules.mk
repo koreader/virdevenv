@@ -142,6 +142,10 @@ $(eval $i: $t)
 
 endef
 
+latest: $(IMAGES:%=%/latest)
+
+PHONIES += latest
+
 # }}}
 
 # Usage. {{{
