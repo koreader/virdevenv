@@ -116,7 +116,7 @@ $1/hadolint: build/$1.dockerfile
 	@hadolint --config $(TOP)/.hadolint.yaml $$<
 
 $1/latest:
-	docker buildx imagetools create $(IMAGE) --tag $(REGISTRY)/$(NAMESPACE)/$1:latest
+	regctl image copy $(IMAGE) $(REGISTRY)/$(NAMESPACE)/$1:latest
 
 $1/lint: $1/hadolint
 
