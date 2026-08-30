@@ -35,6 +35,7 @@ $(file <$1)
 USER 0
 $(IMAGE_POST)
 FROM scratch AS final
+# hadolint ignore=DL3067
 COPY --from=build / /
 ARG USER WORKDIR
 USER $${USER}
