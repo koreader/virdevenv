@@ -9,3 +9,10 @@ ignored:
   - DL3018
   # allow multiple consecutive RUN
   - DL3059
+  # allow non-numeric user-id
+  - DL3066
+  # We use bash, ignore:
+  # - in POSIX sh, brace expansion is undefined
+  - SC3009
+  # - in POSIX sh, [[ ]] is undefined
+  - SC3010
