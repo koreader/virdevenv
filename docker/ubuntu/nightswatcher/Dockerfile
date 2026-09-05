@@ -1,7 +1,6 @@
 RUN apt-get update
 RUN apt-get upgrade -y
 ARG BUILD_DEPS="\
-    chrpath \
     cmake \
     file \
     g++ \
