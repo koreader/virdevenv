@@ -51,7 +51,7 @@ ARG KOTASYNC_REV="8c69d0cd1f064d8f1c71a59b6cf0d533a0cc2dae"
 RUN wget -nv -O - https://github.com/koreader/koreader-base/archive/${KOTASYNC_REV}.tar.gz | tar xz
 WORKDIR koreader-base-${KOTASYNC_REV}/kotasync
 RUN mkdir -p ../thirdparty/kpvcrlib/crengine/cr3gui/data/dict
-RUN make -j"$(nproc)" OUTPUT_DIR=build
+RUN make -j"$(nproc)" OUTPUT_DIR=build appdir
 RUN mv build/AppDir /opt/kotasync
 RUN chmod og=rX -R /opt/kotasync
 RUN ln -s /opt/kotasync/AppRun /usr/local/bin/kotasync
