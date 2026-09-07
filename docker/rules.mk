@@ -40,7 +40,7 @@ COPY --from=build / /
 ARG USER WORKDIR
 USER $${USER}
 WORKDIR $${WORKDIR}
-$(and $(IMAGE_ENV),ENV $(IMAGE_ENV))
+$(and $(IMAGE_ENV),$(subst $(newline),$(newline)ENV ,$(newline)$(IMAGE_ENV)))
 
 # }}}
 

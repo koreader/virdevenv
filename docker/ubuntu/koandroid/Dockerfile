@@ -62,16 +62,3 @@ EOF
 RUN rm -vrf ~/.android/cache
 RUN apt-get clean
 RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Setup shell environment.
-ARG JDK NDK
-# NOTE: using `~${USER}/.bashrc` does not work (command ends up with `'~ko/.bashrc'`).
-RUN tee -a /home/${USER}/.bashrc /root/.bashrc <<EOF
-export JAVA_HOME='/usr/lib/jvm/java-$JDK-openjdk-amd64'
-export ANDROID_NDK_HOME='/opt/$NDK'
-export ANDROID_HOME='/opt/android-sdk-linux'
-export PATH="\$ANDROID_HOME/build-tools/30.0.2:\$PATH"
-export PATH="\$ANDROID_HOME/cmdline-tools/latest/bin:\$PATH"
-export PATH="\$ANDROID_HOME/platform-tools:\$PATH"
-export PATH="\$ANDROID_NDK_HOME:\$PATH"
-EOF
