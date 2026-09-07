@@ -1,4 +1,4 @@
-VERSION = 3.0.0-22.04
+VERSION = 3.1.0-22.04
 
 JDK = 17
 NDK = android-ndk-r23c
