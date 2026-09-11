@@ -108,7 +108,7 @@ RUN ninja --version
 
 # LUAJIT. {{{
 
-ARG LUAJIT_VER="1ee778a4e37122d8ca7d5733c590a47dafd6b15c" # 2.1.1787165859
+ARG LUAJIT_VER="c6ffc141a8762b41703f9287d63d93622a13dd8f" # 2.1.1788856981
 RUN git clone --branch v2.1 --depth 1 https://github.com/LuaJIT/LuaJIT.git luajit
 WORKDIR luajit
 RUN git fetch --depth 1 origin +${LUAJIT_VER}:refs/remotes/origin/${LUAJIT_VER}
