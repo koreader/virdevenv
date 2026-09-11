@@ -13,6 +13,7 @@ endef
 
 define IMAGE_ENV
 JAVA_HOME=/usr/lib/jvm/java-$(JDK)-openjdk-amd64
+ANDROID_ASSETS_COMPRESSION="-m0=flzma2 -mx=9"
 ANDROID_NDK_HOME=/opt/$(NDK)
 ANDROID_HOME=/opt/android-sdk-linux
 PATH=$${ANDROID_HOME}/build-tools/30.0.2:$${PATH}
