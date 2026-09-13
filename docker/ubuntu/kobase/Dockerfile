@@ -211,10 +211,10 @@ ARG MISC_TOOLS="\
     fakeroot \
     hardlink \
     jq \
-    libarchive-tools \
     libtool \
     nasm \
     openssh-client \
+    p7zip-full \
     patch \
     pigz \
     pkgconf \
@@ -239,18 +239,6 @@ if [[ "${TARGETPLATFORM}" = 'linux/amd64' ]]; then
     # toolchain: `/usr/local/include` to the rescue!
     ln -sf /usr/include/x86_64-linux-gnu/asm /usr/local/include/asm
 fi
-EOF
-
-# 7zip
-ARG SEVENZIP_VERSION="17.05"
-RUN wget -qO 7z.7z "https://github.com/p7zip-project/p7zip/releases/download/v${SEVENZIP_VERSION}/linux-p7zip.7z"
-RUN mkdir /opt/7z
-RUN bsdtar xvf 7z.7z -C /opt/7z 7z 7z.so Codecs
-RUN rm 7z.7z
-RUN chmod og=rX -R /opt/7z
-COPY --chmod=755 <<'EOF' /usr/local/bin/7z
-#!/bin/sh
-exec /opt/7z/7z "$@"
 EOF
 
 # ccache
