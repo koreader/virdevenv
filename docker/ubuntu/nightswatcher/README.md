@@ -25,6 +25,7 @@ docker run \
         -e APK_SIGN_KEY_PASS='foo' \
         -e APK_SIGN_STORE_PASS='foo' \
         -e APK_SIGN_KEY_STORE_PATH='/metadata/apk.keystore' \
+        -e APK_SIGNING_TOKEN='shared-ci-signing-secret' \
         -d koreader/nightswatcher
 ```
 
@@ -33,3 +34,6 @@ so that you can more easily iterate.
 
 All new builds will be saved into `/data/release_download` volume.
 OTA related files will be saved into `/data/ota` volume.
+
+`POST /sign-apks` accepts and returns a zip of APKs. Authenticate with `X-APK-SIGNING-TOKEN`.
+Keep the endpoint private and store `APK_SIGNING_TOKEN` as a masked CI/CD variable.

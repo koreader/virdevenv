@@ -14,6 +14,7 @@ import ujson
 import os
 import logging
 import re
+import tempfile
 import zipfile
 from types import SimpleNamespace
 import shutil
@@ -31,6 +32,7 @@ build_fetch_queue = queue.Queue()
 APK_SIGN_KEY_PASS = os.environ['APK_SIGN_KEY_PASS']
 APK_SIGN_KEY_ALIAS = os.environ['APK_SIGN_KEY_ALIAS']
 APK_SIGN_STORE_PASS = os.environ['APK_SIGN_STORE_PASS']
+APK_SIGNING_TOKEN = os.environ['APK_SIGNING_TOKEN']
 GITLAB_TOKEN = os.environ['GITLAB_WEBHOOK_TOKEN']
 TMP_DATA_DIR = os.environ.get('TMP_DATA_DIR', '/data')
 APK_SIGN_KEY_STORE_PATH = os.environ['APK_SIGN_KEY_STORE_PATH']
@@ -43,6 +45,7 @@ STABLE_BUILD_DIR = BUILD_DIR + 'stable'
 PROCESSED_BUILDS_FILE = os.environ['PROCESSED_BUILDS_FILE']
 
 NIGHTWATCHER_TESTING = bool(os.environ.get('NIGHTWATCHER_TESTING'))
+MAX_SIGNING_ARCHIVE_SIZE = 512 * 1024 * 1024
 
 logger.setLevel(logging.DEBUG if NIGHTWATCHER_TESTING else logging.INFO)
 
@@ -95,6 +98,7 @@ artifact_re_deb = re.compile(
     _(?:(?P<arch>armhf|arm64|amd64))
     \.(?P<ftype>deb)
     ''', re.VERBOSE)
+apk_filename_re = re.compile(r'^[A-Za-z0-9._+@~-]+\.apk$')
 
 
 def run_cmd(cmd):
@@ -130,6 +134,38 @@ def sign_apk(apk_path):
          '--overwrite',
          '--verbose'])
     logger.info('Output from uber-apk-signer:\n%s', res)
+
+
+def extract_apks_for_signing(archive_path, destination):
+    try:
+        with zipfile.ZipFile(archive_path) as archive:
+            apk_names = []
+            for entry in archive.infolist():
+                if entry.is_dir():
+                    continue
+                if not apk_filename_re.fullmatch(entry.filename):
+                    raise ValueError(f'invalid APK filename: {entry.filename}')
+                if entry.filename in apk_names:
+                    raise ValueError(f'duplicate APK filename: {entry.filename}')
+                apk_names.append(entry.filename)
+                with archive.open(entry) as source, open(
+                        os.path.join(destination, entry.filename), 'wb') as target:
+                    shutil.copyfileobj(source, target)
+    except zipfile.BadZipFile as exc:
+        raise ValueError('invalid ZIP archive') from exc
+
+    if not apk_names:
+        raise ValueError('archive does not contain APK files')
+    return apk_names
+
+
+def stream_signed_archive(archive_path, work_dir):
+    try:
+        with open(archive_path, 'rb') as archive:
+            while chunk := archive.read(1024 * 1024):
+                yield chunk
+    finally:
+        shutil.rmtree(work_dir, ignore_errors=True)
 
 
 def get_artifact_metadata(artifact_zip):
@@ -421,6 +457,41 @@ def fetch_build_worker():
         gevent.spawn(fetch_build, build_fetch_queue.get()).join(timeout=60)
 
 
+class ApkSigning:
+    def on_post(self, req, resp):
+        token = req.headers.get('X-APK-SIGNING-TOKEN')
+        if not token or not hmac.compare_digest(token, APK_SIGNING_TOKEN):
+            raise falcon.errors.HTTPUnauthorized(description='invalid signing token')
+        if req.content_length is None or req.content_length > MAX_SIGNING_ARCHIVE_SIZE:
+            raise falcon.errors.HTTPBadRequest(description='invalid signing archive size')
+
+        work_dir = tempfile.mkdtemp(prefix='sign-apks-', dir=TMP_DATA_DIR)
+        try:
+            unsigned_archive = os.path.join(work_dir, 'unsigned-apks.zip')
+            with open(unsigned_archive, 'wb') as archive:
+                shutil.copyfileobj(req.bounded_stream, archive)
+
+            apk_names = extract_apks_for_signing(unsigned_archive, work_dir)
+            for apk_name in apk_names:
+                sign_apk(os.path.join(work_dir, apk_name))
+
+            signed_archive = os.path.join(work_dir, 'signed-apks.zip')
+            with zipfile.ZipFile(signed_archive, 'w', zipfile.ZIP_DEFLATED) as archive:
+                for apk_name in apk_names:
+                    archive.write(os.path.join(work_dir, apk_name), apk_name)
+
+            resp.content_type = 'application/zip'
+            resp.content_length = os.path.getsize(signed_archive)
+            resp.downloadable_as = 'signed-apks.zip'
+            resp.stream = stream_signed_archive(signed_archive, work_dir)
+            work_dir = None
+        except ValueError as exc:
+            raise falcon.errors.HTTPBadRequest(description=str(exc)) from exc
+        finally:
+            if work_dir is not None:
+                shutil.rmtree(work_dir, ignore_errors=True)
+
+
 # pylint: disable=too-few-public-methods
 class PipeLine():
     def on_post(self, req, resp):
@@ -491,6 +562,7 @@ def testing():
 
 
 api = falcon.App()
+api.add_route('/sign-apks', ApkSigning())
 if NIGHTWATCHER_TESTING:
     testing()
 else:
