@@ -47,7 +47,7 @@ exec java -jar /opt/uber-apk-signer/uber-apk-signer.jar "$@"
 EOF
 
 # Install kotasync.
-ARG KOTASYNC_REV="c725d4f64fcb4572ac8169d2a2aaa547a938391e"
+ARG KOTASYNC_REV="c8aff0672548d2a2bc677f493a4b96d49cce3fb7"
 RUN wget -nv -O - https://github.com/koreader/koreader-base/archive/${KOTASYNC_REV}.tar.gz | tar xz
 WORKDIR koreader-base-${KOTASYNC_REV}/kotasync
 RUN mkdir -p ../thirdparty/kpvcrlib/crengine/cr3gui/data/dict
