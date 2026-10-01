@@ -4,18 +4,25 @@
 from gevent import monkey
 from gevent import queue
 monkey.patch_all()  # NOQA
+
 # pylint: disable=wrong-import-position,wrong-import-order
 # ruff: noqa: E402
-import collections
-import gevent
-import falcon
-import hmac
-import ujson
-import os
-import logging
-import re
-import zipfile
+from collections import defaultdict
+from pathlib import Path
+from requests import Session
+from requests.adapters import HTTPAdapter
+from tempfile import NamedTemporaryFile
 from types import SimpleNamespace
+from urllib3.util import Retry
+import binascii
+import falcon
+import gevent
+import hashlib
+import hmac
+import json
+import logging
+import os
+import re
 import shutil
 
 
@@ -25,474 +32,282 @@ formatter = logging.Formatter(
     '%(asctime)s %(name)s %(levelname)-8s %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
-build_fetch_queue = queue.Queue()
+update_queue = queue.Queue()
 
-
-APK_SIGN_KEY_PASS = os.environ['APK_SIGN_KEY_PASS']
-APK_SIGN_KEY_ALIAS = os.environ['APK_SIGN_KEY_ALIAS']
-APK_SIGN_STORE_PASS = os.environ['APK_SIGN_STORE_PASS']
-GITLAB_TOKEN = os.environ['GITLAB_WEBHOOK_TOKEN']
-TMP_DATA_DIR = os.environ.get('TMP_DATA_DIR', '/data')
-APK_SIGN_KEY_STORE_PATH = os.environ['APK_SIGN_KEY_STORE_PATH']
-OTA_DIR = '/data/ota/'
-BUILD_DIR = '/data/release_download/'
-ARTIFACT_URL = os.environ.get('ARTIFACT_URL', 'https://gitlab.com/koreader/nightly-builds/-/jobs/%s/artifacts/download')
-NIGHTLY_BUILD_DIR = BUILD_DIR + 'nightly'
-STABLE_BUILD_DIR = BUILD_DIR + 'stable'
-
-PROCESSED_BUILDS_FILE = os.environ['PROCESSED_BUILDS_FILE']
 
 NIGHTWATCHER_TESTING = bool(os.environ.get('NIGHTWATCHER_TESTING'))
+GITHUB_WEBHOOK_SECRET = os.environ['GITHUB_WEBHOOK_SECRET'].encode('utf-8')
+OTA_DIR = Path('/data/ota')
+BUILD_DIR = Path('/data/release_download')
+NIGHTLY_BUILD_DIR = BUILD_DIR / 'nightly'
+STABLE_BUILD_DIR = BUILD_DIR / 'stable'
+
 
 logger.setLevel(logging.DEBUG if NIGHTWATCHER_TESTING else logging.INFO)
 
 
-koreader_version_re = re.compile(
-    r'''
-    # Release date.
-    (?P<base_version>
-        v[0-9]{4}\.[0-9]{2}
-        # Optional patch release number.
-        (?:\.[0-9]{1,2})?
-    )
-    # Optional commit count + commit hash + commit date for nightlies.
-    (?:
-        -(?P<commit_number>[0-9]+)
-        -g(?P<commit_hash>[0-9a-z]{7,12})
-        _(?P<commit_date>[0-9]{4}-[0-9]{2}-[0-9]{2})
-    )?
-    ''', re.VERBOSE)
-
-# koreader-linux-x86_64-v2023.06.1.tar.xz
-# koreader-ubuntu-touch-arm-v2015.11-640-g17e9a8e_2018-03-09.targz
-# koreader-android-arm-v2015.11-654-gb7392f7_2018-03-09.apk
-artifact_re = re.compile(
-    r'''
-    koreader-
-    (?P<platform>[a-z0-9\-]+?)-
-    (?:(?P<arch>arm64|arm|aarch64|i686|x86_64|x86)-?.*-)?
-    (?P<version>v[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-(?P<commit_number>[0-9]+)-g(?P<commit_hash>[0-9a-z]{7,12})_(?P<commit_date>[0-9]{4}-[0-9]{2}-[0-9]{2}))?)
-    \.(?P<ftype>[A-Za-z]+(?:\.[a-z]+)?)
-    ''', re.VERBOSE)
-
-# koreader-v2023.06.1-x86_64.AppImage
-# koreader-v2025.10-197-g7c5ee9c1a2_2026-03-13-x86_64.AppImage
-artifact_re_appimage = re.compile(
-    r'''
-    koreader-
-    (?P<version>v[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-(?P<commit_number>[0-9]+)-g(?P<commit_hash>[0-9a-z]{7,12})_(?P<commit_date>[0-9]{4}-[0-9]{2}-[0-9]{2}))?)-
-    (?:(?P<arch>aarch64|armhf|x86_64))
-    \.(?P<ftype>AppImage)
-    ''', re.VERBOSE)
-
-# koreader_2023.06.1-1_amd64.deb
-# koreader_2025.10-197-g7c5ee9c1a2-1_amd64.deb
-artifact_re_deb = re.compile(
-    r'''
-    koreader_
-    (?P<version>[0-9]{4}\.[0-9]{2}(?:\.[0-9]{1,2})?(?:-(?P<commit_number>[0-9]+)-g(?P<commit_hash>[0-9a-z]{7,12}))?)
-    -(?P<pkg_rev>[0-9]+)
-    _(?:(?P<arch>armhf|arm64|amd64))
-    \.(?P<ftype>deb)
-    ''', re.VERBOSE)
+# Setup requests session.
+session = Session()
+# Enable automatic retries.
+session.mount('https://', HTTPAdapter(max_retries=Retry(
+    total=3,
+    backoff_factor=0.1,
+    status_forcelist=[502, 503, 504],
+    allowed_methods={'GET'},
+)))
+# Enable support for `file://` URLs.
+if NIGHTWATCHER_TESTING:
+    from requests_file import FileAdapter
+    session.mount('file://', FileAdapter())
 
 
-def run_cmd(cmd):
-    logger.info('Running command: %s', ' '.join(cmd))
-    return gevent.subprocess.check_call(cmd)
+def sha256path(path):
+    path = Path(path)
+    return path.with_name(path.name + '.sha256')
 
-
-def symlink(target, link_name):
-    logger.debug('ln -sf \'%s\' \'%s\'', target, link_name)
-    if os.path.exists(link_name):
-        os.remove(link_name)
-    os.symlink(target, link_name)
-
-
-def copyfile(source, target):
-    logger.debug('cp --remove-destination \'%s\' \'%s\'', source, target)
-    if os.path.exists(target):
-        os.remove(target)
-    shutil.copy2(source, target)
-
-
-def sign_apk(apk_path):
-    logger.info('Signing %s...', apk_path)
-    if NIGHTWATCHER_TESTING:
-        return
-    res = gevent.subprocess.check_output(
-        ['uber-apk-signer',
-         '--ks', APK_SIGN_KEY_STORE_PATH,
-         '--ksAlias', APK_SIGN_KEY_ALIAS,
-         '--ksKeyPass', APK_SIGN_KEY_PASS,
-         '--ksPass', APK_SIGN_STORE_PASS,
-         '--apks', apk_path,
-         '--overwrite',
-         '--verbose'])
-    logger.info('Output from uber-apk-signer:\n%s', res)
-
-
-def get_artifact_metadata(artifact_zip):
+def sha256sum(path):
+    path = Path(path)
     try:
-        with zipfile.ZipFile(artifact_zip) as zf:
-            namelist = zf.namelist()
-    except zipfile.BadZipfile:
-        logger.exception('Got invalid zip file: %s', artifact_zip)
-        return None, None, None, {}
+        sha256 = sha256path(path).read_text(encoding='utf-8').split(None, 1)[0]
+    except FileNotFoundError:
+        sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
+        sha256path(path).write_text(f'{sha256} {path.name}\n', encoding='utf-8')
+    return sha256
 
-    version_set = set()
-    commit_number_set = set()
-    artifact = {}
-    for f in namelist:
-        logger.info('Checking file in zip %s', f)
-        for rx, rx_platform in (
-            (artifact_re           , None      ),
-            (artifact_re_appimage  , 'appimage'),
-            (artifact_re_deb       , 'debian'  ),
-        ):
-            basename = os.path.basename(f.strip())
-            m = rx.fullmatch(basename)
-            if m is None:
-                continue
-            gd = m.groupdict()
-            # NOTE: remove 'v' prefix and strip build date from version.
-            version_set.add(gd['version'].removeprefix('v').split('_', 1)[0])
-            commit_number_set.add(gd['commit_number'])
-            platform = gd.pop('platform', rx_platform)
-            arch = gd.get('arch')
-            if arch is not None:
-                platform += '-' + arch
-            artifact[gd['ftype']] = (platform, basename)
-
-    logger.debug('get_artifact_metadata(%s): %r, %r, %r', artifact_zip, version_set, commit_number_set, artifact)
-    assert len(version_set) == 1, version_set
-    assert len(commit_number_set) == 1, commit_number_set
-
-    return version_set.pop(), commit_number_set.pop(), artifact
+def fetch(url, expected_sha256):
+    logger.debug('fetch %s', url)
+    resp = session.get(url)
+    if resp.status_code != 200:
+        logger.error('Failed to fetch %s: %u %s', url, resp.status_code, resp.reason)
+        return None
+    with NamedTemporaryFile(delete=False) as tmpf:
+        tmpf.write(resp.content)
+        tmpf.close()
+        actual_sha256 = sha256sum(tmpf.name)
+        if expected_sha256 != actual_sha256:
+            logger.error(f'Failed to fetch {url}: SHA-256 do not match, expected {expected_sha256}, calculated {actual_sha256}')
+            return None
+        return Path(tmpf.name)
 
 
-# git-describe adds a commit number and commit hash prefixed by -g if it's not the tag itself
-def is_stable(commit_number):
-    return commit_number is None
+PLATFORM_RX = r'(?P<platform>.+)'
+VERSION_RX = r'(?P<version>(?P<base_version>[0-9]+(\.[0-9]+)*)(?:-(?P<commit_number>[0-9]+)-g(?P<commit_hash>[a-f0-9]+))?(?:_(?P<commit_date>[0-9]{4}-[0-9]{2}-[0-9]{2}))?)'
+EXTENSION_RX = r'\.(?P<extension>7z|apk|AppImage|deb|kotasync|targz|tar\.xz|zip|zsync)'
 
-
-download_artifact_ext_map = collections.defaultdict(lambda: ('zip',), {
-    'build_android': ('apk',),
-    'build_android_aarch64': ('apk',),
-    'build_android_x86': ('apk',),
-    'build_linux_aarch64': ('AppImage', 'deb', 'tar.xz'),
-    'build_linux_armhf': ('AppImage', 'deb', 'tar.xz'),
-    'build_linux_x86_64': ('AppImage', 'deb', 'tar.xz'),
-    'build_ubuntutouch': ('click',),
-})
-
-# names come from GitLab, see https://gitlab.com/koreader/nightly-builds/blob/master/.gitlab-ci.yml
-ota_link_models = frozenset([
-    'build_android', 'build_android_aarch64', 'build_android_x86',
-    'build_linux_aarch64', 'build_linux_armhf', 'build_linux_x86_64'])
-ota_sync_models = frozenset([
-    'build_cervantes',
-    'build_kindle', 'build_legacy_kindle',
-    'build_kindle5', 'build_kindlepw2',
-    'build_kindlehf',
-    'build_kobo', 'build_kobov5',
-    'build_pocketbook', 'build_pocketbookhf',
-    'build_remarkable',
-    'build_remarkable_aarch64',
-    'build_sony_prstux'])
-ota_sync_manifest = collections.defaultdict(lambda: 'koreader/ota/package.index', {
-    'pocketbook': 'applications/koreader/ota/package.index',
-})
-
-
-def extract_kotasync_target(kotasync_file):
-    """ Extract target filename from kotasync manifest. """
-    return ujson.loads(gevent.subprocess.check_output(('zstd', '-dcf', kotasync_file)))['filename']
-
-def extract_zsync_target(zsync_file):
-    """ Extract target filename from zsync file header. """
-    with open(zsync_file, 'rb') as f:
-        f.readline()
-        line = f.readline().decode('utf-8', errors='ignore')
-        assert line.startswith('Filename:')
-        return line.split()[1]
-
-def extract_build(artifact_zip, build):
-    # caller is responsible for removing artifact_zip
-    version, commit_number, artifact = get_artifact_metadata(artifact_zip)
-    stable = is_stable(commit_number)
-    if not artifact or not artifact_zip:
-        logger.error(
-            'Invalid build artifact, failed to extract metadata from zipfile.')
-        return False
-
-    # validate artifact_zip
-    download_artifact_ext = set(download_artifact_ext_map[build['name']])
-    if build['name'] in ota_sync_models:
-        download_artifact_ext.add('tar.xz')
-        download_artifact_ext.add('targz')
-    missing = download_artifact_ext - set(artifact.keys())
-    if missing:
-        logger.error('Invalid build artifact, missing one of %s files. Artifact: %s, missing: %s', build['name'], artifact, sorted(missing))
-        return False
-
-    artifact = {ext: artifact[ext] for ext in download_artifact_ext}
-    logger.info('Found artifacts for %s: %s', build['name'], artifact)
-    if not artifact:
-        logger.error('No valid artifacts found for build %s', build['name'])
-        return False
-
-    # unzip to tmp directory
-    tmp_version_dir = '%s/tmp-%s-%s/' % (TMP_DATA_DIR, build['name'], version)
-    # -n for no overwrite, -j for junk path
-    unzip_cmd = ['unzip', '-n', '-j', '-d', tmp_version_dir, artifact_zip]
-    run_cmd(unzip_cmd)
-
-    version_dir = '%s/%s/' % (stable is True and STABLE_BUILD_DIR or NIGHTLY_BUILD_DIR, version)
-    if not os.path.exists(version_dir):
-        os.mkdir(version_dir)
-
-    for platform, filename in artifact.values():
-        tmp_file_path = tmp_version_dir + filename
-        download_file_path = version_dir + filename
-
-        if platform.startswith('android'):
-            sign_apk(tmp_file_path)
-        copyfile(tmp_file_path, download_file_path)
-
-        # point update pointer to the right location
-        if build['name'] in ota_link_models:
-            if platform == 'android-arm':
-                # For historical reasons koreader-android-arm OTA uses koreader-android.
-                platform = 'android'
-
-            link_file_stable = OTA_DIR + ('koreader-%s-latest-stable' % platform)
-            link_file_nightly = OTA_DIR + ('koreader-%s-latest-nightly' % platform)
-            link_file = stable is True and link_file_stable or link_file_nightly
-
-            symlink(download_file_path, OTA_DIR + filename)
-
-            with open(link_file, "w", encoding="utf-8") as f:
-                f.write(filename)
-
-            if stable is True:
-                copyfile(link_file, link_file_nightly)
-                if 'android' in build['name']:
-                    tmp_android_fdroid_latest_path = tmp_version_dir + 'koreader-android-fdroid-latest'
-                    android_fdroid_latest = OTA_DIR + 'koreader-android-fdroid-latest'
-                    copyfile(tmp_android_fdroid_latest_path, android_fdroid_latest)
-
-    # Build kotasync metadata.
-    if build['name'] in ota_sync_models:
-        platform, filename = artifact['tar.xz']
-        logger.info('Building kotasync metadata for %s...', platform)
-        download_file_path = version_dir + filename
-        # FIXME: check version in latest-nightly and skip old versions
-        kotasync_file_stable = f"{OTA_DIR}koreader-{platform}-latest-stable.kotasync"
-        kotasync_file_nightly = f"{OTA_DIR}koreader-{platform}-latest-nightly.kotasync"
-        kotasync_file = stable is True and kotasync_file_stable or kotasync_file_nightly
-
-        # Keep the previous targz file in case someone downloaded the kotasync
-        # file at an inopportune time.  That should normally only be seconds,
-        # but better safe than sorry.
-        nightly_txz_prev = None
-        if os.path.exists(kotasync_file_nightly):
-            nightly_txz_prev = extract_kotasync_target(kotasync_file_nightly)
-
-        cmd = [
-            'kotasync', 'make',
-            '--manifest', ota_sync_manifest[platform],
-        ]
-        if os.path.exists(kotasync_file_nightly):
-            cmd.extend(('--reorder', kotasync_file_nightly))
-        cmd.extend((download_file_path, kotasync_file))
-        run_cmd(cmd)
-
-        symlink(download_file_path, OTA_DIR + filename)
-
-        if stable is True:
-            shutil.copy2(kotasync_file, kotasync_file_nightly)
-
-        # Find the new tar.xz file by reading the kotasync file, and then
-        # purge older files.
-        stable_txz = None
-        nightly_txz = None
-        if os.path.exists(kotasync_file_stable):
-            stable_txz = extract_kotasync_target(kotasync_file_stable)
-        if os.path.exists(kotasync_file_nightly):
-            nightly_txz = extract_kotasync_target(kotasync_file_nightly)
-
-        for f in os.listdir(OTA_DIR):
-            if f.startswith(f'koreader-{platform}-v') and f.endswith('.tar.xz') and f != stable_txz and f != nightly_txz and f != nightly_txz_prev:
-                logger.info(f'Purging old tar.xz: {f}')
-                os.remove(OTA_DIR + f)
-
-    # build zsync metadata
-    if build['name'] in ota_sync_models:
-        platform, filename = artifact['targz']
-        logger.info('Building zsync metadata for %s...', platform)
-        download_file_path = version_dir + filename
-        # FIXME: check version in latest-nightly and skip old versions
-        zsync_file_stable = f"{OTA_DIR}koreader-{platform}-latest-stable.zsync"
-        zsync_file_nightly = f"{OTA_DIR}koreader-{platform}-latest-nightly.zsync"
-        zsync_file = stable is True and zsync_file_stable or zsync_file_nightly
-
-        # Keep the previous targz file in case someone downloaded the zsync file at an inopportune time.
-        # That should normally only be seconds, but better safe than sorry.
-        nightly_targz_prev = None
-        if os.path.exists(zsync_file_nightly):
-            nightly_targz_prev = extract_zsync_target(zsync_file_nightly)
-
-        symlink(download_file_path, OTA_DIR + filename)
-        run_cmd(['zsyncmake', OTA_DIR + filename, '-C', '-u', filename, '-o', zsync_file])
-
-        if stable is True:
-            shutil.copy2(zsync_file, zsync_file_nightly)
-
-        # Find the new targz file by reading the second line of the zsync file.
-        # Then purge older targzs.
-        stable_targz = None
-        nightly_targz = None
-        if os.path.exists(zsync_file_stable):
-            stable_targz = extract_zsync_target(zsync_file_stable)
-        if os.path.exists(zsync_file_nightly):
-            nightly_targz = extract_zsync_target(zsync_file_nightly)
-
-        for f in os.listdir(OTA_DIR):
-            if f.startswith(f'koreader-{platform}-v') and f.endswith('.targz') and f != stable_targz and f != nightly_targz and f != nightly_targz_prev:
-                logger.info(f'Purging old targz: {f}')
-                os.remove(OTA_DIR + f)
-
-    shutil.rmtree(tmp_version_dir)
-
-    return True
-
-
-def is_build_processed(build_id):
-    if not os.path.exists(PROCESSED_BUILDS_FILE):
-        return False
-    with open(PROCESSED_BUILDS_FILE, 'r', encoding='utf-8') as f:
-        processed_builds = f.read().splitlines()
-    return str(build_id) in processed_builds
-
-
-def mark_build_as_processed(build_id):
-    if os.path.exists(PROCESSED_BUILDS_FILE):
-        with open(PROCESSED_BUILDS_FILE, 'r+', encoding='utf-8') as f:
-            processed_builds = f.read().splitlines()
-            if len(processed_builds) >= 500:
-                processed_builds = processed_builds[-499:]
-            processed_builds.append(str(build_id))
-            f.seek(0)
-            f.truncate()
-            f.write('\n'.join(processed_builds) + '\n')
-    else:
-        with open(PROCESSED_BUILDS_FILE, 'w', encoding='utf-8') as f:
-            f.write(str(build_id) + '\n')
-
-
-def fetch_build(build):
-    if is_build_processed(build['id']):
-        logger.info('Build %s (%s) already processed, skipping.', build['name'], build['id'])
-        return
-
-    logger.info('Fetching artifacts for build %s(%s)', build['name'], build['id'])
-    artifact_zip = '%s/%s_artifacts.zip' % (TMP_DATA_DIR, build['id'])
-
-    # `-C -` for continue download from dropped off
-    # `-L` to follow redirects
-    retcode = run_cmd(['curl', '--retry', '3', '-C', '-', '-L',
-                       ARTIFACT_URL % build['id'], '-o', artifact_zip])
-    if retcode != 0:
-        logger.error('Failed to download build %s(%s)',
-                     build['name'], build['id'])
-    elif extract_build(artifact_zip, build):
-        mark_build_as_processed(build['id'])
-    os.remove(artifact_zip)
-
-
-def fetch_build_worker():
-    if not os.path.exists(NIGHTLY_BUILD_DIR):
-        os.mkdir(NIGHTLY_BUILD_DIR)
-    if not os.path.exists(STABLE_BUILD_DIR):
-        os.mkdir(STABLE_BUILD_DIR)
-    while True:
-        logger.info('Fetch build worker waiting for new builds....')
-        gevent.spawn(fetch_build, build_fetch_queue.get()).join(timeout=60)
+ASSET_RX_LIST = (
+    # koreader-linux-x86_64-v2023.06.1.tar.xz
+    # koreader-android-arm-v2015.11-654-gb7392f7_2018-03-09.apk
+    re.compile('koreader-' + PLATFORM_RX + '-v' + VERSION_RX + EXTENSION_RX),
+    # koreader-v2023.06.1-x86_64.AppImage
+    # koreader-v2025.10-197-g7c5ee9c1a2_2026-03-13-x86_64.AppImage
+    re.compile('koreader-v' + VERSION_RX + '-' + PLATFORM_RX + EXTENSION_RX),
+    # koreader_2026.09-8-g84cf973-1_amd64.deb
+    re.compile('koreader_' + VERSION_RX + '-1_' + PLATFORM_RX + EXTENSION_RX),
+    # koreader-android-arm-latest-nightly
+    # koreader-kindlepw2-latest-nightly.kotasync
+    # koreader-kindlepw2-latest-stable.zsync
+    re.compile('koreader-' + PLATFORM_RX + '-latest-(?P<version>nightly|stable)(?:' + EXTENSION_RX + '|)'),
+    # koreader-android-fdroid-latest
+    re.compile('koreader-(?P<platform>android)-(?P<version>fdroid)-latest'),
+)
 
 
 # pylint: disable=too-few-public-methods
-class PipeLine():
-    def on_post(self, req, resp):
-        token = req.headers.get('X-GITLAB-TOKEN')
-        if not token or not hmac.compare_digest(token, GITLAB_TOKEN):
-            raise falcon.errors.HTTPBadRequest(description='missing X-GITLAB-TOKEN')
+class AssetName(SimpleNamespace):
 
-        try:
-            data = ujson.load(req.stream)
-        except Exception as e:
-            raise falcon.errors.HTTPBadRequest(description='Bad body') from e
-        logger.debug('Got webhook request: %s', data)
+    def __init__(self, name):
+        super().__init__()
+        for rx in ASSET_RX_LIST:
+            m = rx.fullmatch(name)
+            if m is not None:
+                self.__dict__.update(m.groupdict())
+                break
+        else:
+            raise ValueError(f"invalid asset name: {name}")
+        for f in ('base_version', 'commit_number', 'commit_hash', 'commit_date', 'extension'):
+            self.__dict__[f] = self.__dict__.get(f)
+        self.name = name
+        self.latest = '-latest' in name
+        self.ota = self.latest or self.extension in {'kotasync', 'zsync'}
+        self.stable = self.version == 'stable' or (self.version != 'nightly' and self.commit_number is None)
 
-        if data['object_kind'] != 'pipeline':
-            resp.text = '["meh"]'
+    def __str__(self):
+        return self.name
+
+
+def cp(src, dst):
+    logger.debug('cp %s %s', src, dst)
+    shutil.copy(src, dst)
+
+def rm(path):
+    logger.debug('rm %s', path)
+    Path(path).unlink()
+
+def symlink(target, link):
+    logger.debug('ln -sf %s %s', target, link)
+    link = Path(link)
+    if link.exists():
+        link.unlink()
+    link.symlink_to(target)
+
+
+class Manifest:
+
+    def __init__(self, ota_dir, nightlies_dir, stables_dir):
+        self.ota_dir = Path(ota_dir)
+        self.nightlies_dir = Path(nightlies_dir)
+        self.stables_dir = Path(stables_dir)
+        self.ota = {}
+        self.stable = {}
+        self.nightly = {}
+        self.by_sha256 = defaultdict(set)
+
+    def ensure_dirs(self):
+        for d in (self.ota_dir, self.nightlies_dir, self.stables_dir):
+            d.mkdir(parents=True, exist_ok=True)
+
+    def initial_update(self):
+        for manifest, directory in (
+            (self.ota, self.ota_dir),
+            (self.nightly, self.nightlies_dir),
+            (self.stable, self.stables_dir),
+        ):
+            for dirpath, _dirnames, filenames in directory.walk():
+                for name in filenames:
+                    path = dirpath / name
+                    if path.suffix == '.sha256':
+                        continue
+                    assert path.name not in manifest
+                    realpath = path.resolve()
+                    sha256 = sha256sum(realpath)
+                    manifest[path.name] = sha256
+                    self.by_sha256[sha256].add(realpath)
+        logger.info('ota: %u files', len(self.ota))
+        logger.info('stable: %u files', len(self.stable))
+        logger.info('nightly: %u files', len(self.nightly))
+
+    def update_asset(self, asset):
+        logger.info('Updating asset: %s', asset.name)
+        local_copies = self.by_sha256[asset.sha256]
+        if local_copies:
+            path, path_is_temp = next(iter(local_copies)), False
+        else:
+            path, path_is_temp = fetch(asset.browser_download_url, asset.sha256), True
+            if path is None:
+                return None
+        if asset.name.ota:
+            dest_dir = self.ota_dir
+        elif asset.name.stable:
+            dest_dir = self.stables_dir / asset.name.version
+        else:
+            dest_dir = self.nightlies_dir / asset.name.version.split('_', 1)[0]
+        dest_path = dest_dir / str(asset.name)
+        if path != dest_path:
+            dest_path.parent.mkdir(exist_ok=True)
+            cp(path, dest_path)
+            cp(sha256path(path), sha256path(dest_path))
+        if path_is_temp:
+            rm(sha256path(path))
+            rm(path)
+        return dest_path
+
+    def on_ota_update(self, release):
+        logger.info('OTA update: %s', release.target_commitish)
+        updated = []
+        removed = set(self.ota)
+        for asset in release.assets:
+            removed.discard(str(asset.name))
+            if self.ota.get(str(asset.name)) != asset.sha256:
+                updated.append(asset)
+        for asset in sorted(updated, key=lambda a: (a.name.latest, a.name.ota, str(a.name))):
+            dest_path = self.update_asset(asset)
+            if not dest_path:
+                return
+            if dest_path.parent != self.ota_dir:
+                symlink(dest_path, self.ota_dir / dest_path.name)
+            self.ota[dest_path.name] = asset.sha256
+        for name in sorted(removed):
+            logger.info('Removing asset: %s', name)
+            path = self.ota_dir / name
+            rm(path)
+            rm(sha256path(path))
+            if not path.is_symlink():
+                self.by_sha256[self.ota[name]].discard(path)
+            del self.ota[name]
+
+    def on_new_release(self, release):
+        logger.info('new release: %s', release.tag_name)
+        for asset in sorted(release.assets, key=lambda a: str(a.name)):
+            dest_path = self.update_asset(asset)
+            if not dest_path:
+                return
+
+    def on_update(self, release):
+        release = SimpleNamespace(**release)
+        assetlist = []
+        for asset in release.assets:
+            asset = SimpleNamespace(**asset)
+            if asset.state != 'uploaded':
+                continue
+            asset.name = AssetName(asset.name)
+            sha256 = asset.digest
+            assert sha256.startswith('sha256:')
+            asset.sha256 = sha256.removeprefix('sha256:')
+            assetlist.append(asset)
+        release.assets = assetlist
+        if release.tag_name == 'ota':
+            self.on_ota_update(release)
+        else:
+            self.on_new_release(release)
+
+
+def update_worker():
+    manifest = Manifest(OTA_DIR, NIGHTLY_BUILD_DIR, STABLE_BUILD_DIR)
+    manifest.ensure_dirs()
+    manifest.initial_update()
+    while True:
+        logger.info('Update worker waiting for updates…')
+        timeout = (10 if NIGHTWATCHER_TESTING else 3) * 60
+        gevent.spawn(manifest.on_update, update_queue.get()).join(timeout=timeout)
+
+
+# pylint: disable=too-few-public-methods
+class GitHubWebHook():
+
+    OTA_UPDATE_DEBOUNCE_DELAY = 4 if NIGHTWATCHER_TESTING else 40
+
+    def __init__(self):
+        self._ota_update_debounce = None
+
+    def on_post(self, req, _resp):
+        signature_header = req.headers.get('X-HUB-SIGNATURE-256')
+        if not signature_header:
+            raise falcon.errors.HTTPForbidden(description='x-hub-signature-256 header is missing!')
+        body = req.stream.read()
+        expected_digest = hmac.digest(GITHUB_WEBHOOK_SECRET, body, 'SHA256')
+        expected_signature = 'sha256=' + binascii.hexlify(expected_digest).decode()
+        if not hmac.compare_digest(expected_signature, signature_header):
+            raise falcon.errors.HTTPForbidden(description='Request signatures do not match!')
+        data = json.loads(body)
+        logger.info('Webhook: “%s” %s, %u assets',
+                    data.get('release', {}).get('tag_name'),
+                    data.get('action'),
+                    len(data.get('release', {}).get('assets', ())))
+        assert 'action' in data
+        assert 'release' in data
+        release = data['release']
+        if release['draft']:
             return
-
-        commit = data['commit']
-        attributes = data['object_attributes']
-        status = attributes['status']
-        logger.info('Processing pipeline event %s, status: %s, commit: %s, '
-                    'commit message:\n%s',
-                    attributes['id'], status, commit['id'], commit['message'])
-
-        if status in ('failed', 'success'):
-            # build finished, download as many artifacts as possible
-            for build in data['builds']:
-                if not build['name'].startswith('build_'):
-                    logger.debug('Skipping non-build job %s(%s), status: %s...',
-                                 build['name'], build['id'], build['status'])
-                    continue
-                logger.info('Processing build %s(%s), status: %s...',
-                            build['name'], build['id'], build['status'])
-                if build['status'] != 'success':
-                    continue
-                build_fetch_queue.put(build)
-        resp.text = '["ok"]'
-
-
-def testing():
-    pipeline = PipeLine()
-    gevent.spawn(fetch_build_worker)
-    testlist = []
-    for version in (
-        f[:-5]
-        for f in os.listdir('tests')
-        if f.endswith('.json')
-    ):
-        m = koreader_version_re.fullmatch(version)
-        if m is None:
-            raise ValueError(f'bad version string: {version}')
-        # Create a tuple of int for sorting:
-        # v2025.10                           → (2025, 10, 0,    0)
-        # v2025.10-156-g7fdba6a99_2026-03-01 → (2025, 10, 0,  156)
-        # v2026.03.1                         → (2026,  3, 1,    0)
-        key = tuple(map(int, m.group('base_version')[1:].split('.')))
-        if len(key) == 2:
-            key += (0,)
-        key += (int(m.group('commit_number') or 0),)
-        testlist.append((key, version))
-    for key, version in sorted(testlist):
-        with open('tests/%s.json' % version, encoding='utf-8') as fp:
-            req = SimpleNamespace()
-            req.headers = { 'X-GITLAB-TOKEN': GITLAB_TOKEN }
-            req.stream = fp
-            resp = SimpleNamespace()
-            pipeline.on_post(req, resp)
+        if release['tag_name'] == 'ota' and data['action'] == 'edited':
+            if self._ota_update_debounce is not None:
+                self._ota_update_debounce.kill()
+                self._ota_update_debounce = None
+            self._ota_update_debounce = gevent.spawn_later(self.OTA_UPDATE_DEBOUNCE_DELAY, lambda: update_queue.put(release))
+        elif release['tag_name'] != 'ota' and data['action'] == 'published':
+            Path('body.json').write_bytes(body)
+            update_queue.put(release)
 
 
 api = falcon.App()
-if NIGHTWATCHER_TESTING:
-    testing()
-else:
-    api.add_route('/webhooks/gitlab-pipeline', PipeLine())
-    gevent.spawn(fetch_build_worker)
+api.add_route('/webhooks/github', GitHubWebHook())
+gevent.spawn(update_worker)

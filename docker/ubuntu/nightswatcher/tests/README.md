@@ -1,11 +1,7 @@
-Use `mkpipevt.sh` to create a number of pipeline events and associated artifacts,
-e.g. for 1 stable followed by 2 nightlies and another stable:
+To run nightwatcher in testing mode, fill-in `GITHUB_WEBHOOK_SECRET` in
+`nightswatcher/tests/env`, and run:
 
-```
-▸ ./nightswatcher/tests/mkpipevt.sh v2025.10 v2025.10-156-g7fdba6a99_2026-03-01 v2025.10-167-g0c6d217e3_2026-03-05 v2026.03
-```
 
-Then to run nightwatcher in testing mode:
 ```
 ▸ make nightwatcher/test
 ```
@@ -13,6 +9,18 @@ Then to run nightwatcher in testing mode:
 This will mount `./nightwatcher` to `/nightwatcher`, so `./nightwatcher/tests`
 can be accessed, and there's no need to rebuild the image when hacking on
 `./nightswatcher/nightswatcher.py`. State will be saved in `./nightswatcher/data`
-(mounted to `/data`). Each pipeline event JSON created by `mkpipevt.sh` will
-be used to trigger a corresponding pipeline event (in increasing version
-order).
+(mounted to `/data`). Additionally, gunicorn is started with `--reload`, so changes
+to `nightswatcher/nightswatcher.py` will automatically trigger a reload.
+
+To manually simulate a webhook event using cURL (assuming `body.json` contains the payload):
+```
+▸ . ./nightswatcher/tests/env
+▸ signature="$(openssl dgst -sha256 -hex -hmac "${GITHUB_WEBHOOK_SECRET}" <body.json | sed '/^SHA2-256(stdin)= /!Q1;s///')"
+▸ curl \
+    -X POST \
+    -H 'Accept: */*' \
+    -H 'Content-Type: application/json' \
+    -H 'X-Github-Event: release' \
+    -H "X-Hub-Signature-256: sha256=${signature}" \
+    --data-binary @body.json http://127.0.0.1:9742/webhooks/github
+```
