@@ -44,7 +44,7 @@ $(and $(IMAGE_ENV),$(subst $(newline),$(newline)ENV ,$(newline)$(IMAGE_ENV)))
 
 # }}}
 
-CMD $(or $(IMAGE_CMD),$(call to_json_array,$(IMAGE_SHELL)))
+CMD $(call to_json_array,$(or $(IMAGE_CMD),$(IMAGE_SHELL)))
 
 # vim: foldmethod=marker foldlevel=0 sw=4
 endef
