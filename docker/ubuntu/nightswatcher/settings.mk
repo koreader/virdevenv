@@ -6,15 +6,13 @@ IMAGE_USER     = 0
 IMAGE_WORKDIR  = /
 
 define IMAGE_CMD
-[
-"gunicorn",
-"--access-logfile", "-",
-"--bind", "0.0.0.0:9742",
-"--chdir", "/nightswatcher",
-"--worker-class", "gevent",
-"--workers", "1",
-"nightswatcher:api"
-]
+gunicorn
+--access-logfile -
+--bind 0.0.0.0:9742
+--chdir /nightswatcher
+--worker-class gevent
+--workers 1
+nightswatcher:api
 endef
 IMAGE_CMD := $(strip $(IMAGE_CMD))
 
@@ -32,4 +30,4 @@ nightswatcher/test:
 		--env-file nightswatcher/tests/env \
 		-v '$(CURDIR)/nightswatcher/data:/data' \
 		-v '$(CURDIR)/nightswatcher:/nightswatcher' \
-		--rm -t -i $(IMAGE)
+		--rm -t -i $(IMAGE) $(IMAGE_CMD) --reload
