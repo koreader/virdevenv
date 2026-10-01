@@ -8,8 +8,8 @@ Usage
 -----
 
 First, you need to setup a pipeline service hook token and trigger token
-in gitlab. The webhook needs to be pointed at:
-`http://YOURDOMAIN:9742/webhooks/gitlab-pipeline`.
+in GitHub. The webhook needs to be pointed at:
+`http://YOURDOMAIN:9742/webhooks/github`.
 
 Then spin up the service with the following Docker command:
 
@@ -19,14 +19,8 @@ docker run \
         --rm \
         -v `pwd`/download:/data/release_download \
         -v `pwd`/ota:/data/ota \
-        -v `pwd`/metadata:/metadata \
         -p 9742:9742 \
-        -e GITLAB_WEBHOOK_TOKEN='bar' \
-        -e APK_SIGN_KEY_ALIAS='pouet' \
-        -e APK_SIGN_KEY_PASS='foo' \
-        -e APK_SIGN_STORE_PASS='foo' \
-        -e APK_SIGN_KEY_STORE_PATH='/metadata/apk.keystore' \
-        -e PROCESSED_BUILDS_FILE='builds.txt' \
+        -e GITHUB_WEBHOOK_SECRET='bar' \
         -d koreader/nightswatcher
 ```
 

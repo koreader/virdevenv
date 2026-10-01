@@ -1,6 +1,6 @@
 VERSION = 1.7.2
 
-IMAGE_BASE     = $(UBUNTU_IMAGE)
+IMAGE_BASE     = docker.io/library/ubuntu:24.04
 IMAGE_PLATFORM = arm64 x86_64
 IMAGE_USER     = 0
 IMAGE_WORKDIR  = /
@@ -27,7 +27,7 @@ nightswatcher/pylint: nightswatcher/nightswatcher.py
 nightswatcher/test:
 	mkdir -p $(CURDIR)/nightswatcher/data/{release_download,ota}
 	docker run $(platform_arg) --detach-keys "ctrl-q,ctrl-q" \
-		--env-file nightswatcher/tests/env \
+		--env-file nightswatcher/tests/env -p 9742:9742 \
 		-v '$(CURDIR)/nightswatcher/data:/data' \
 		-v '$(CURDIR)/nightswatcher:/nightswatcher' \
 		--rm -t -i $(IMAGE) $(IMAGE_CMD) --reload

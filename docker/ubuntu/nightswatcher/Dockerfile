@@ -60,6 +60,7 @@ RUN rm -rf koreader-base-*
 
 # Install nightswatcher's other python dependencies.
 COPY --chmod=644 nightswatcher/requirements.txt /nightswatcher/
+RUN python3 -c "import os, sysconfig; os.unlink(sysconfig.get_path('stdlib') + '/EXTERNALLY-MANAGED')"
 RUN uv pip install --no-cache --system -r /nightswatcher/requirements.txt
 
 # And finally the nightswatcher' script itself.
