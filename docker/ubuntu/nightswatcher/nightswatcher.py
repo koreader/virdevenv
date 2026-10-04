@@ -42,6 +42,10 @@ BUILD_DIR = Path('/data/release_download')
 NIGHTLY_BUILD_DIR = BUILD_DIR / 'nightly'
 STABLE_BUILD_DIR = BUILD_DIR / 'stable'
 
+# Minimum number of versions of each kind to keep around when purging.
+KEEP_NIGHTLY_AMOUNT = int(os.environ.get('KEEP_NIGHTLY_AMOUNT', 7))
+KEEP_STABLE_AMOUNT = int(os.environ.get('KEEP_STABLE_AMOUNT', 2))
+
 
 logger.setLevel(logging.DEBUG if NIGHTWATCHER_TESTING else logging.INFO)
 
@@ -110,6 +114,22 @@ ASSET_RX_LIST = (
     # koreader-android-fdroid-latest
     re.compile('koreader-(?P<platform>android)-(?P<version>fdroid)-latest'),
 )
+
+
+# Create a tuple of int for sorting version strings:
+# 2025.10                           → (2025, 10, 0,    0)
+# 2025.10-156-g7fdba6a99_2026-03-01 → (2025, 10, 0,  156)
+# 2026.03.1                         → (2026,  3, 1,    0)
+def version_key(version):
+    m = re.fullmatch(VERSION_RX, version)
+    if m is None:
+        raise ValueError(f'bad version string: {version}')
+    key = list(map(int, m.group('base_version').split('.')))
+    # NOTE: pad to 3 elements to keep the tuple size stable.
+    while len(key) < 3:
+        key.append(0)
+    key.append(int(m.group('commit_number') or 0))
+    return tuple(key)
 
 
 # pylint: disable=too-few-public-methods
@@ -241,6 +261,27 @@ class Manifest:
             dest_path = self.update_asset(asset)
             if not dest_path:
                 return
+        self.purge_old_versions()
+
+    def purge_old_versions(self):
+        # Purge the oldest version directories, keeping the last KEEP_*_AMOUNT.
+        for directory, keep in (
+            (self.nightlies_dir, KEEP_NIGHTLY_AMOUNT),
+            (self.stables_dir, KEEP_STABLE_AMOUNT),
+        ):
+            dirs = sorted((d.name for d in directory.iterdir() if d.is_dir() and re.fullmatch(VERSION_RX, d.name)), key=version_key)
+            for d in (directory / d for d in dirs[:max(0, len(dirs) - keep)]):
+                logger.info('Purging old version directory: %s', d)
+                for path in d.iterdir():
+                    if path.is_symlink():
+                        continue
+                    self.by_sha256[sha256sum(path)].discard(path.resolve())
+                shutil.rmtree(d)
+        # Purge dangling OTA symlinks (e.g., to purged versions).
+        for path in self.ota_dir.iterdir():
+            if path.is_symlink() and not path.exists():
+                self.ota.pop(path.name, None)
+                rm(path)
 
     def on_update(self, release):
         release = SimpleNamespace(**release)
