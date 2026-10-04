@@ -30,6 +30,6 @@ so that you can more easily iterate.
 All new builds will be saved into `/data/release_download` volume.
 OTA related files will be saved into `/data/ota` volume.
 
-Older builds are purged automatically, keeping the `KEEP_NIGHTLY_AMOUNT`
-(default: `7`) most recent nightly versions and the `KEEP_STABLE_AMOUNT`
-(default: `2`) most recent stable versions.
+Older builds are purged automatically as per `KEEP_FREE_GB` (default: `10`).
+Oldest versions first. Always keep at least `KEEP_STABLE_AMOUNT` (default: `2`)
+and `KEEP_NIGHTLY_AMOUNT` (default: `7`).
