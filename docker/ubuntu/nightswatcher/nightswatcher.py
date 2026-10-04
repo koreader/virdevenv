@@ -180,8 +180,6 @@ class Manifest:
         self.nightlies_dir = Path(nightlies_dir)
         self.stables_dir = Path(stables_dir)
         self.ota = {}
-        self.stable = {}
-        self.nightly = {}
         self.by_sha256 = defaultdict(set)
 
     def ensure_dirs(self):
@@ -189,10 +187,12 @@ class Manifest:
             d.mkdir(parents=True, exist_ok=True)
 
     def initial_update(self):
+        stable = {}
+        nightly = {}
         for manifest, directory in (
             (self.ota, self.ota_dir),
-            (self.nightly, self.nightlies_dir),
-            (self.stable, self.stables_dir),
+            (nightly, self.nightlies_dir),
+            (stable, self.stables_dir),
         ):
             for dirpath, _dirnames, filenames in directory.walk():
                 for name in filenames:
@@ -205,8 +205,8 @@ class Manifest:
                     manifest[path.name] = sha256
                     self.by_sha256[sha256].add(realpath)
         logger.info('ota: %u files', len(self.ota))
-        logger.info('stable: %u files', len(self.stable))
-        logger.info('nightly: %u files', len(self.nightly))
+        logger.info('stable: %u files', len(stable))
+        logger.info('nightly: %u files', len(nightly))
 
     def update_asset(self, asset):
         logger.info('Updating asset: %s', asset.name)
