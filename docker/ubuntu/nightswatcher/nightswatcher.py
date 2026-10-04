@@ -304,7 +304,6 @@ class GitHubWebHook():
                 self._ota_update_debounce = None
             self._ota_update_debounce = gevent.spawn_later(self.OTA_UPDATE_DEBOUNCE_DELAY, lambda: update_queue.put(release))
         elif release['tag_name'] != 'ota' and data['action'] == 'published':
-            Path('body.json').write_bytes(body)
             update_queue.put(release)
 
 
