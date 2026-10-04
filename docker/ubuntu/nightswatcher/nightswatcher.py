@@ -42,6 +42,8 @@ BUILD_DIR = Path('/data/release_download')
 NIGHTLY_BUILD_DIR = BUILD_DIR / 'nightly'
 STABLE_BUILD_DIR = BUILD_DIR / 'stable'
 
+# Free space budget (GiB) that old version directories are purged to maintain.
+KEEP_FREE_GB = int(os.environ.get('KEEP_FREE_GB', 10))
 # Minimum number of versions of each kind to keep around when purging.
 KEEP_NIGHTLY_AMOUNT = int(os.environ.get('KEEP_NIGHTLY_AMOUNT', 7))
 KEEP_STABLE_AMOUNT = int(os.environ.get('KEEP_STABLE_AMOUNT', 2))
@@ -264,19 +266,24 @@ class Manifest:
         self.purge_old_versions()
 
     def purge_old_versions(self):
-        # Purge the oldest version directories, keeping the last KEEP_*_AMOUNT.
+        # Purge version directories oldest-first (across both kinds) to free up
+        # KEEP_FREE_GB, never touching the KEEP_*_AMOUNT newest of each kind.
+        purgable = []
         for directory, keep in (
             (self.nightlies_dir, KEEP_NIGHTLY_AMOUNT),
             (self.stables_dir, KEEP_STABLE_AMOUNT),
         ):
             dirs = sorted((d.name for d in directory.iterdir() if d.is_dir() and re.fullmatch(VERSION_RX, d.name)), key=version_key)
-            for d in (directory / d for d in dirs[:max(0, len(dirs) - keep)]):
-                logger.info('Purging old version directory: %s', d)
-                for path in d.iterdir():
-                    if path.is_symlink():
-                        continue
-                    self.by_sha256[sha256sum(path)].discard(path.resolve())
-                shutil.rmtree(d)
+            purgable.extend(directory / d for d in dirs[:max(0, len(dirs) - keep)])
+        for d in sorted(purgable, key=lambda x: version_key(x.name)):
+            if shutil.disk_usage(BUILD_DIR).free >= (KEEP_FREE_GB << 30):
+                break
+            logger.info('Purging old version directory: %s', d)
+            for path in d.iterdir():
+                if path.is_symlink():
+                    continue
+                self.by_sha256[sha256sum(path)].discard(path.resolve())
+            shutil.rmtree(d)
         # Purge dangling OTA symlinks (e.g., to purged versions).
         for path in self.ota_dir.iterdir():
             if path.is_symlink() and not path.exists():
