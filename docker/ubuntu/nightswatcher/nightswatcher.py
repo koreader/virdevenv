@@ -72,6 +72,7 @@ def sha256sum(path):
     except FileNotFoundError:
         sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
         sha256path(path).write_text(f'{sha256} {path.name}\n', encoding='utf-8')
+        sha256path(path).chmod(0o444)
     return sha256
 
 def fetch(url, expected_sha256):
@@ -138,6 +139,7 @@ class AssetName(SimpleNamespace):
 def cp(src, dst):
     logger.debug('cp %s %s', src, dst)
     shutil.copy(src, dst)
+    Path(dst).chmod(0o644)
 
 def rm(path):
     logger.debug('rm %s', path)
