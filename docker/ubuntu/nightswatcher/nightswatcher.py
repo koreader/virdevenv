@@ -165,12 +165,12 @@ def cp(src, dst):
 
 def rm(path):
     logger.debug('rm %s', path)
-    Path(path).unlink()
+    Path(path).unlink(missing_ok=True)
 
 def symlink(target, link):
     logger.debug('ln -sf %s %s', target, link)
     link = Path(link)
-    if link.exists():
+    if link.is_symlink() or link.exists():
         link.unlink()
     link.symlink_to(target)
 
@@ -252,12 +252,13 @@ class Manifest:
             self.ota[dest_path.name] = asset.sha256
         for name in sorted(removed):
             logger.info('Removing asset: %s', name)
+            sha256 = self.ota.pop(name)
             path = self.ota_dir / name
             rm(path)
             rm(sha256path(path))
             if not path.is_symlink():
-                self.by_sha256[self.ota[name]].discard(path)
-            del self.ota[name]
+                self.by_sha256[sha256].discard(path)
+        self.purge_old_versions()
 
     def on_new_release(self, release):
         logger.info('new release: %s', release.tag_name)
