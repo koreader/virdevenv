@@ -93,6 +93,8 @@ def fetch(url, expected_sha256):
         actual_sha256 = sha256sum(tmpf.name)
         if expected_sha256 != actual_sha256:
             logger.error(f'Failed to fetch {url}: SHA-256 do not match, expected {expected_sha256}, calculated {actual_sha256}')
+            rm(sha256path(tmpf.name))
+            rm(tmpf.name)
             return None
         return Path(tmpf.name)
 
