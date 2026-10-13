@@ -170,9 +170,10 @@ def ota_assets_to_remove(existing_names, incoming_names, keep_amount):
             asset_name = AssetName(name)
         except ValueError:
             continue
-        managed_names.add(name)
         if asset_name.latest or asset_name.base_version is None:
+            # Never remove `latest-*`/`fdroid-latest`.
             continue
+        managed_names.add(name)
         group = (asset_name.platform, asset_name.extension, asset_name.stable)
         versions_by_group[group].append(asset_name)
 
