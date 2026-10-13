@@ -1,4 +1,4 @@
-VERSION = 2.2.1
+VERSION = 2.2.2
 
 IMAGE_BASE     = docker.io/library/ubuntu:24.04
 IMAGE_PLATFORM = arm64 x86_64
