@@ -28,7 +28,10 @@ NOTE: `--rm` removes the nightswatcher name when you `docker stop nightswatcher`
 so that you can more easily iterate.
 
 All new builds will be saved into `/data/release_download` volume.
-OTA related files will be saved into `/data/ota` volume.
+OTA related files will be saved into `/data/ota` volume. The two newest
+versioned OTA builds per platform and artifact are retained (current plus one
+previous); `KEEP_OTA_AMOUNT` (default: `2`) controls this. Latest aliases are
+synced to the current `ota` release.
 
 Older builds are purged automatically as per `KEEP_FREE_GB` (default: `10`).
 Oldest versions first. Always keep at least `KEEP_STABLE_AMOUNT` (default: `2`)

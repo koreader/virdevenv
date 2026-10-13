@@ -47,6 +47,8 @@ KEEP_FREE_GB = int(os.environ.get('KEEP_FREE_GB', 10))
 # Minimum number of versions of each kind to keep around when purging.
 KEEP_NIGHTLY_AMOUNT = int(os.environ.get('KEEP_NIGHTLY_AMOUNT', 7))
 KEEP_STABLE_AMOUNT = int(os.environ.get('KEEP_STABLE_AMOUNT', 2))
+# Number of versioned OTA builds to keep per platform and artifact.
+KEEP_OTA_AMOUNT = int(os.environ.get('KEEP_OTA_AMOUNT', 2))
 
 
 logger.setLevel(logging.DEBUG if NIGHTWATCHER_TESTING else logging.INFO)
@@ -160,6 +162,38 @@ class AssetName(SimpleNamespace):
         return self.name
 
 
+def ota_assets_to_remove(existing_names, incoming_names, keep_amount):
+    managed_names = set()
+    versions_by_group = defaultdict(list)
+    for name in existing_names | incoming_names:
+        try:
+            asset_name = AssetName(name)
+        except ValueError:
+            continue
+        managed_names.add(name)
+        if asset_name.latest or asset_name.base_version is None:
+            continue
+        group = (asset_name.platform, asset_name.extension, asset_name.stable)
+        versions_by_group[group].append(asset_name)
+
+    retained = set()
+    for versions in versions_by_group.values():
+        versions.sort(
+            key=lambda asset_name: (
+                version_key(asset_name.version),
+                asset_name.commit_date or '',
+                asset_name.commit_hash or '',
+            ),
+            reverse=True,
+        )
+        retained.update(str(asset_name) for asset_name in versions[:max(0, keep_amount)])
+
+    return {
+        name for name in existing_names - incoming_names
+        if name in managed_names and name not in retained
+    }
+
+
 def cp(src, dst):
     logger.debug('cp %s %s', src, dst)
     shutil.copy(src, dst)
@@ -239,9 +273,8 @@ class Manifest:
     def on_ota_update(self, release):
         logger.info('OTA update: %s', release.target_commitish)
         updated = []
-        removed = set(self.ota)
+        incoming_names = {str(asset.name) for asset in release.assets}
         for asset in release.assets:
-            removed.discard(str(asset.name))
             if self.ota.get(str(asset.name)) != asset.sha256:
                 updated.append(asset)
         for asset in sorted(updated, key=lambda a: (a.name.latest, a.name.ota, str(a.name))):
@@ -251,6 +284,7 @@ class Manifest:
             if dest_path.parent != self.ota_dir:
                 symlink(dest_path, self.ota_dir / dest_path.name)
             self.ota[dest_path.name] = asset.sha256
+        removed = ota_assets_to_remove(set(self.ota), incoming_names, KEEP_OTA_AMOUNT)
         for name in sorted(removed):
             logger.info('Removing asset: %s', name)
             sha256 = self.ota.pop(name)
