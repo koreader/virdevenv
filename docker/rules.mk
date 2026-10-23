@@ -201,7 +201,9 @@ define finalize_ci_matrices
 endef
 
 ci-matrices: | build/
-	$(MAKE) --no-print-directory --output-sync --quiet $(foreach t,$(or $(CI_IMAGES),$(IMAGE_IDS)),$(call target_escape,$t/ci)) | sed 's/^/[/;s/, $$/]/' | $(strip $(finalize_ci_matrices)) >build/ci_matrices.json
+	$(MAKE) --no-print-directory --output-sync --quiet $(foreach t,$(or $(CI_IMAGES),$(IMAGE_IDS)),$(call target_escape,$t/ci)) >build/ci_matrices.txt
+	sed -i 's/^/[/;s/, $$/]/' build/ci_matrices.txt
+	$(strip $(finalize_ci_matrices)) build/ci_matrices.txt >build/ci_matrices.json
 
 $(foreach t,$(filter-out $(IMAGE_IDS),$(BASE_IDS)),$(call target_escape,$t/ci)):
 
