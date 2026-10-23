@@ -1,5 +1,8 @@
 name: Build Matrix
 
+permissions:
+  contents: read
+
 on:
   workflow_call:
     inputs:
