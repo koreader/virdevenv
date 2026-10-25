@@ -41,7 +41,7 @@ jobs:
           show-progress: false
 
       - name: Install regctl
-        run: ./docker/ubuntu/scripts/install_regctl.sh
+        run: ./docker/scripts/install_regctl.sh
 
       - name: Log in to the registry
         env:

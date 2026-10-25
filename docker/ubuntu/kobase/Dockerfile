@@ -24,7 +24,7 @@ RUN apt-get install --no-install-recommends -y \
     ;
 
 # Setup root user.
-COPY kobase/bashrc /root/.bashrc
+COPY ubuntu/kobase/bashrc /root/.bashrc
 
 # Add dedicated user.
 # NOTE: use the same UID as the one used by Github Actions to avoid permissions issues.
@@ -32,7 +32,7 @@ RUN useradd -m ${USER} -s /bin/bash -u 1001
 RUN usermod -aG sudo ${USER}
 RUN echo "${USER} ALL=(ALL:ALL) NOPASSWD:ALL" | EDITOR='tee -a' visudo
 WORKDIR ${WORKDIR}
-COPY --chown=${USER} kobase/bashrc .bashrc
+COPY --chown=${USER} ubuntu/kobase/bashrc .bashrc
 
 # MAKE. {{{
 

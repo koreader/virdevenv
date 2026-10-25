@@ -64,7 +64,7 @@ jobs:
 
       - &INSTALL_REGCTL
         name: Install regctl
-        run: ./docker/ubuntu/scripts/install_regctl.sh
+        run: ./docker/scripts/install_regctl.sh
 
       - name: Download base image from artifacts
         if: inputs.base && !inputs.publish
@@ -78,10 +78,10 @@ jobs:
         run: docker load -i '${{ inputs.base }} ${{ matrix.platform }}.tar'
 
       - name: Build image
-        run: make -C docker/ubuntu ${{ inputs.image }}
+        run: make -C docker ${{ inputs.image }}
 
       - name: Save image
-        run: make -C docker/ubuntu ${{ inputs.image }}/save TAR="${PWD}/${TAR}"
+        run: make -C docker ${{ inputs.image }}/save TAR="${PWD}/${TAR}"
 
       - name: Compress image layers
         env:

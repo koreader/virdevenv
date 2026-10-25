@@ -58,12 +58,12 @@ WORKDIR ../..
 RUN rm -rf koreader-base-*
 
 # Install nightswatcher's other python dependencies.
-COPY --chmod=644 nightswatcher/requirements.txt /nightswatcher/
+COPY --chmod=644 ubuntu/nightswatcher/requirements.txt /nightswatcher/
 RUN python3 -c "import os, sysconfig; os.unlink(sysconfig.get_path('stdlib') + '/EXTERNALLY-MANAGED')"
 RUN uv pip install --no-cache --system -r /nightswatcher/requirements.txt
 
 # And finally the nightswatcher' script itself.
-COPY --chmod=755 nightswatcher/nightswatcher.py /nightswatcher/
+COPY --chmod=755 ubuntu/nightswatcher/nightswatcher.py /nightswatcher/
 RUN mkdir -p /data/ota /data/release_download /metadata
 
 # Cleanup.

@@ -30,5 +30,3 @@ endef
 define DEFAULT_IMAGE_ENV
 PATH=/opt/x-tools/bin:$${PATH}
 endef
-
-include ../rules.mk
