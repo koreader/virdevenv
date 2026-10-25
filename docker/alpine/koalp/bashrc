@@ -1,0 +1,11 @@
+#!/bin/bash
+
+alias ls='ls --color=auto'
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+
+mkcd() {
+    mkdir -p "$*"
+    cd "$*" || exit
+}
