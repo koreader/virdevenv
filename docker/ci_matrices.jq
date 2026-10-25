@@ -1,5 +1,6 @@
 def build(built):
   . as $jobs |
+  # $jobs | debug |
   # What can we build? (no base or base is already built)
   [$jobs[] | select(.base == null or (.base | in(built)))] as $nodeps |
   # Create updated `built` mapping.

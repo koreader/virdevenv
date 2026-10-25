@@ -68,12 +68,12 @@ jobs:
       - name: Install dependencies
         run: |
           set -x
-          ./docker/ubuntu/scripts/install_hadolint.sh
-          ./docker/ubuntu/scripts/install_uv.sh
+          ./docker/scripts/install_hadolint.sh
+          ./docker/scripts/install_uv.sh
           uv pip install --system pylint -r ./docker/ubuntu/nightswatcher/requirements.txt
 
       - name: Lint
-        run: make -s -C docker/ubuntu lint --output-sync -j$(nproc) -k
+        run: make -s -C docker lint --output-sync -j$(nproc) -k
 
 
   prepare:
@@ -91,7 +91,7 @@ jobs:
           show-progress: false
 
       - name: Install regctl
-        run: ./docker/ubuntu/scripts/install_regctl.sh
+        run: ./docker/scripts/install_regctl.sh
 
       - name: Generate outputs
         id: generate
@@ -108,11 +108,11 @@ jobs:
           rebuild=${{ github.event.inputs != null && inputs.rebuild && 'true' || '' }}
           publish=${{ (github.event.inputs == null && github.ref == vars.DOCKER_PUBLISH_REF || inputs.publish) && 'true' || 'false' }}
           nodeps=${{ github.event.inputs != null && inputs.nodeps && 'true' || '' }}
-          make -s -C docker/ubuntu -j$(nproc) \
+          make -s -C docker ci-matrices -j$(nproc) \
             REGISTRY="${registry}" NAMESPACE="${namespace}" \
             ${nodeps:+IMAGE_BASE=scratch} ${rebuild:+REGCTL=false} \
             ${images:+"CI_IMAGES=${images[*]}"} ci-matrices
-          jq <docker/ubuntu/build/ci_matrices.json >outputs \
+          jq <docker/build/ci_matrices.json >outputs \
             --argjson publish "${publish}" --arg registry "${registry}" --arg namespace "${namespace}" \
             '{ publish: $publish, registry: $registry, namespace: $namespace, matrices: . }'
           jq --raw-output '.matrices[].matrix |= tostring | to_entries[] | .key + "=" + (.value|tostring)' <outputs | tee -a "${GITHUB_OUTPUT}"

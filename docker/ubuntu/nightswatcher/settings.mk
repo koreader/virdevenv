@@ -20,14 +20,14 @@ PHONIES += nightswatcher/pylint nightswatcher/test
 
 nightswatcher/lint: nightswatcher/pylint
 
-nightswatcher/pylint: nightswatcher/nightswatcher.py
+nightswatcher/pylint: $(IMAGE_DIR)/nightswatcher.py
 	$(info pylint $<)
-	@pylint --fail-on=E --fail-under=8 --rcfile nightswatcher/.pylintrc $<
+	@pylint --fail-on=E --fail-under=8 --rcfile $(IMAGE_DIR)/.pylintrc $<
 
 nightswatcher/test:
-	mkdir -p $(CURDIR)/nightswatcher/data/{release_download,ota}
+	mkdir -p $(IMAGE_DIR)/data/{release_download,ota}
 	docker run $(platform_arg) --detach-keys "ctrl-q,ctrl-q" \
-		--env-file nightswatcher/tests/env -p 9742:9742 \
-		-v '$(CURDIR)/nightswatcher/data:/data' \
-		-v '$(CURDIR)/nightswatcher:/nightswatcher' \
+		--env-file $(IMAGE_DIR)/tests/env -p 9742:9742 \
+		-v '$(IMAGE_DIR)/data:/data' \
+		-v '$(IMAGE_DIR):/nightswatcher' \
 		--rm -t -i $(IMAGE) $(IMAGE_CMD) --reload

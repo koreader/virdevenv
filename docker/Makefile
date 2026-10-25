@@ -1,5 +1,7 @@
 TOP := $(abspath ../$(dir $(lastword $(MAKEFILE_LIST))))
 
+usage:
+
 .DEFAULT: usage
 .SILENT:
 
@@ -49,7 +51,7 @@ CMD $(call to_json_array,$(or $(IMAGE_CMD),$(IMAGE_SHELL)))
 # vim: foldmethod=marker foldlevel=0 sw=4
 endef
 
-IMAGES = $(patsubst %/,%,$(dir $(wildcard */Dockerfile)))
+IMAGES := $(patsubst %/,%,$(dir $(wildcard */*/Dockerfile)))
 IMAGE_IDS =
 BASE_IDS =
 
@@ -76,67 +78,76 @@ shell_escape = '$(subst ','\'',$1)'
 to_json_array = [$(patsubst %,"%"$(comma),$(wordlist 2,$(words $1),1 $1)) "$(lastword $1)"]
 target_escape = $(subst :,\:,$1)
 
+VARS := BUILD_ARGS IMAGE_BASE IMAGE_CMD IMAGE_ENV IMAGE_PLATFORM IMAGE_POST IMAGE_PRE IMAGE_SHELL IMAGE_USER IMAGE_WORKDIR
+
 define image_rules
+$(foreach v,$(VARS),$(eval DEFAULT_$v := ))
+$(eval include $(dir $1)/settings.mk)
+$(eval I := $(notdir $1))
+$(eval IMAGE_DIR := $1)
 $(eval VERSION := )
-$(foreach v,BUILD_ARGS IMAGE_BASE IMAGE_CMD IMAGE_ENV IMAGE_PLATFORM IMAGE_POST IMAGE_PRE IMAGE_SHELL IMAGE_USER IMAGE_WORKDIR,
-$(eval $v := $$(DEFAULT_$v))
-)
+$(foreach v,$(VARS),$(eval $v := $$(DEFAULT_$v)))
 $(eval include $1/settings.mk)
-$(foreach v,IMAGE_BASE IMAGE_SHELL VERSION,
-ifeq (,$$($v))
-$$(error $1: $v not defined)
-endif
-)
+$(foreach v,IMAGE_BASE IMAGE_SHELL VERSION,$(if $v,,$(error $1: $v not defined)))
 
-$(eval IMAGE := $(REGISTRY)/$(NAMESPACE)/$1:$(VERSION))
+$(eval IMAGE := $(REGISTRY)/$(NAMESPACE)/$I:$(VERSION))
 
-$1_DOCKERFILE := $$(call DOCKERFILE,$1/Dockerfile)
+$I_DOCKERFILE := $$(call DOCKERFILE,$1/Dockerfile)
 
-build/$1.dockerfile: | build/
+build/$I.dockerfile: | build/
 ifneq (,$$(DRY_RUN))
-	$$(info cat >$$@ <<'DOCKERFILE_EOF'$$(newline)$$($1_DOCKERFILE)$$(newline)DOCKERFILE_EOF)
+	$$(info cat >$$@ <<'DOCKERFILE_EOF'$$(newline)$$($I_DOCKERFILE)$$(newline)DOCKERFILE_EOF)
 else
-	$$(file >$$@,$$($1_DOCKERFILE))
+	$$(file >$$@,$$($I_DOCKERFILE))
 endif
 
 IMAGE_IDS += $(IMAGE)
 BASE_IDS += $(IMAGE_BASE)
 
-$1 $1/: build/$1.dockerfile
-	$(strip $(call image_build,$1)) $$< .
+$I: build/$I.dockerfile
+	$(strip $(image_build)) $$< .
 
-$(call target_escape,$(IMAGE)/ci) $1/ci: $(call target_escape,$(IMAGE_BASE)/ci)
+$I/: $I
+
+$I/ci: $(call target_escape,$(IMAGE_BASE)/ci)
 	@echo '$(IMAGE)' 1>&2
-	$(REGCTL) image digest $(IMAGE) 1>&2 || printf '%s' '{ "id": "$1 $(VERSION)", "image": "$(IMAGE)", "base": "$(IMAGE_BASE)", "platform": "$(subst ",\",$(subst $(empty) $(empty),,$(call to_json_array,$(IMAGE_PLATFORM))))" }, '
+	$(REGCTL) image digest $(IMAGE) 1>&2 || printf '%s' '{ "id": "$I $(VERSION)", "image": "$(IMAGE)", "base": "$(IMAGE_BASE)", "platform": "$(subst ",\",$(subst $(empty) $(empty),,$(call to_json_array,$(IMAGE_PLATFORM))))" }, '
 
-$1/inspect:
+$I/inspect:
 	docker image inspect $(platform_arg) $(IMAGE) | jq --sort-keys
 
-$1/hadolint: build/$1.dockerfile
+$I/hadolint: build/$I.dockerfile
 	$$(info hadolint $$<)
 	@hadolint --config $(TOP)/.hadolint.yaml $$<
 
-$1/latest:
-	regctl image copy $(IMAGE) $(REGISTRY)/$(NAMESPACE)/$1:latest
+$I/latest:
+	regctl image copy $(IMAGE) $(REGISTRY)/$(NAMESPACE)/$I:latest
 
-$1/lint: $1/hadolint
+$I/lint: $I/hadolint
 
-$1/push:
+$I/push:
 	docker push $(platform_arg) $(IMAGE)
 
-$1/run:
+$I/run:
 	docker run $(platform_arg) --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(IMAGE)
 
-$1/save:
-	docker save $(platform_arg) --output '$(or $(TAR),$1.tar)' $(IMAGE)
+$I/save:
+	docker save $(platform_arg) --output '$(or $(TAR),$I.tar)' $(IMAGE)
 
-$1/shell:
+$I/shell:
 	docker run $(platform_arg) --detach-keys "ctrl-q,ctrl-q" --rm -t -i $(IMAGE) $(IMAGE_SHELL)
 
-PHONIES += build/$1.dockerfile
+PHONIES += build/$I.dockerfile
 
-$(foreach t,$1 $1/ $1/hadolint $1/latest $1/lint $1/inspect $1/push $1/run $1/save $1/shell,
-$(foreach i,$(call target_escape,$(patsubst $1%,$(IMAGE)%,$t)),
+# Add filesystem shortcuts (for ease of shell-completion).
+$1: $I
+$(foreach t,$I/ci $I/hadolint $I/latest $I/lint $I/inspect $I/push $I/run $I/save $I/shell,
+$(t:$I/%=$1/%): $t
+)
+
+# Add fully-qualified image name shortcuts (include Docker registry prefix).
+$(foreach t,$I $I/ $I/ci $I/hadolint $I/latest $I/lint $I/inspect $I/push $I/run $I/save $I/shell,
+$(foreach i,$(call target_escape,$(patsubst $I%,$(IMAGE)%,$t)),
 $(eval PHONIES += $t $i)
 $(eval $i: $t)
 ))
