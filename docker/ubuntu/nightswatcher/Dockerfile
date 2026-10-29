@@ -15,6 +15,7 @@ ARG BUILD_DEPS="\
 "
 RUN apt-get install --no-install-recommends -y \
     ca-certificates \
+    p7zip-full \
     pigz \
     python3 \
     unzip \
